@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/MitchellPel/Joblio/releases/latest"><img src="https://img.shields.io/github/v/release/MitchellPel/Joblio?label=Download&color=6d28d9" alt="Latest release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white" alt="Windows 10/11">
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-22a574.svg" alt="PRs welcome"></a>
 </p>
@@ -114,4 +114,4 @@ Electron 32 · React 18 · TypeScript · Tailwind · sql.js (SQLite) · electron
 
 ## License
 
-[Apache License 2.0](LICENSE). The Joblio name and logo are marks of the project; the license does not grant a trademark right to rebrand the app as your own product.
+[GNU GPL v3](LICENSE) (or later). Anyone who distributes Joblio or a modified version must also provide the source under the GPL. The Joblio name and logo are marks of the project — a fork cannot call itself Joblio or use the logo as if it were the original.

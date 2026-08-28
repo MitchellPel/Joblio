@@ -2,7 +2,7 @@
   "name": "signage-job-tracker",
   "version": "0.4.25",
   "private": true,
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-or-later",
   "description": "Windows desktop job tracker for sign shops. Electron + React. One PC, no server.",
   "author": "Mitchell Pel",
   "main": "dist-electron/main.js",

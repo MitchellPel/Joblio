@@ -50,4 +50,4 @@ Adding a table: migration → repository → IPC → preload → types → UI.
 
 ## License
 
-By opening a pull request you agree your contribution is under the [Apache License 2.0](LICENSE), unless you say otherwise in the PR.
+By opening a pull request you agree your contribution is licensed under the [GNU GPL v3](LICENSE) (or later), unless you say otherwise in the PR.
