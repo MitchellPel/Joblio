@@ -32,7 +32,13 @@ Reference Program/
 
 # Chat dumps / design source / preview leftovers
 cursor_chat_program_update_notification.json
+# Joblio logo masters — Illustrator and other vectors stay on this PC only
 *.ai
+*.ait
+*.eps
+*.afdesign
+*.cdr
+brand-source/
 *.artifact.json
 critique.json
 widgets/

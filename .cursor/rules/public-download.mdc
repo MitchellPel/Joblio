@@ -26,5 +26,5 @@ When this repo is public, a stranger must be able to clone or install Joblio and
 
 - Hardcode office UNC paths, LAN IPs, or ngrok URLs as the only way to start
 - Require `joblio-api-key.txt` for local SQLite
-- Put secrets, `jobs.db`, or `Reference Program/` (AGPL) in git
+- Put secrets, `jobs.db`, `Reference Program/` (AGPL), or **logo vector masters** (`.ai`, `.eps`, Affinity) in git. Raster PNGs the app needs (icons in `src/assets/`) are fine.
 - Assume every installer is updated from the office share
