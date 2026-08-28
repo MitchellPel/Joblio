@@ -1,20 +1,56 @@
-# Joblio
+<p align="center">
+  <img src="docs/github-hero.png" alt="Joblio" width="560">
+</p>
 
-Windows desktop app for tracking signage jobs: **New → Design → Production → Install / Collection**.
+<p align="center">
+  <strong>Windows job tracker for sign shops.</strong><br>
+  New → Design → Production → Install / Collection.<br>
+  Runs on one PC. No cloud, no server, no account to sign up.
+</p>
 
-Electron + React + TypeScript. Not a website. **No office server required** to try it on one PC.
+<p align="center">
+  <a href="https://github.com/MitchellPel/Joblio/releases/latest"><img src="https://img.shields.io/github/v/release/MitchellPel/Joblio?label=Download&color=6d28d9" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
+  <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white" alt="Windows 10/11">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-22a574.svg" alt="PRs welcome"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/MitchellPel/Joblio/releases/latest"><strong>Download the installer</strong></a>
+  ·
+  <a href="#run-from-source">Run from source</a>
+  ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
 ---
 
-## Download and run (Windows)
+Joblio is a **desktop app**, not a website. Staff install it like any other Windows program. Jobs live in a SQLite file on that PC, or in a shared folder so the whole shop sees the same board.
 
-**Installer (no Node):** [Latest release](https://github.com/MitchellPel/Joblio/releases/latest) — download `Joblio Setup *.exe`, install, then choose **Start on this PC**.
+## Download
 
-Login: `admin` / `admin123` — change that password after you get in.
+1. Get [**Joblio Setup**](https://github.com/MitchellPel/Joblio/releases/latest) (`.exe`).
+2. Install and open Joblio.
+3. Choose **Start on this PC**.
+4. Log in: `admin` / `admin123` — then change that password.
 
-Shop PCs keep using the office update share (**Restart & Install**). Home / public copies skip that share if it is not on the PC.
+A home or laptop copy does not need an office network. If the shop update share is missing, Joblio skips it instead of erroring.
 
-**From source**
+Shop PCs that already share a `jobs.db` keep using **Use shared folder** and **Restart & Install** from the office update path.
+
+## What you get
+
+- **Kanban board** — drag jobs through New, Design, Production, Install, Collection, Completed
+- **One PC or a team** — local database, or one `jobs.db` on a network share
+- **People and audit** — logins, roles, notes, stage history with who and when
+- **Proofs, calendar, cut / print list** — the shop tools we actually use
+- **Offline** — no hosting, no API key, no Docker required to try it
+
+Optional office Postgres/Docker stack: [`self-host/`](self-host/README.md).
+
+## Run from source
+
+Windows 10/11, [Node.js 20+](https://nodejs.org/).
 
 ```bash
 git clone https://github.com/MitchellPel/Joblio.git
@@ -23,198 +59,41 @@ npm install
 npm run dev
 ```
 
-On first launch choose **Start on this PC**. Same login as above.
+Same first-run choice: **Start on this PC**. Installer build: `npm run dist`.
 
----
+## Contributing
+
+We want help making Joblio great — bugs, polish, docs, and ideas are all useful.
+
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** before a big change. Open an [issue](https://github.com/MitchellPel/Joblio/issues) if you are unsure where to start.
+
+Good first directions:
+
+- Contrast and small-window layout (shop laptops, no GPU)
+- Bugs you can reproduce on one PC
+- README / comments that help the next person
+- Tests around login, board, and setup
+
+Please do **not** copy code from `Reference Program/` if you have a local clone — that tree is AGPL learning-only and is not part of Joblio.
 
 ## Team (shared folder)
 
-On setup, pick **Use shared folder** and point every PC at the same `jobs.db` on a network share.
+On setup, pick **Use shared folder** and point every PC at the same `jobs.db`. Every machine must be able to read and write that path.
 
-Optional office Docker stack (Postgres): see `self-host/README.md`.
-
----
-
-## Features
-
-- **Works on one PC** — Start on this computer; jobs stay local until you choose a shared folder
-- **Kanban Board** — Drag-and-drop jobs between stages (New, Design, Production, Install, Collection, Completed)
-- **Multi-user** — Username/password logins with admin and staff roles
-- **Audit trail** — Every stage change is recorded with who, when, and any notes
-- **Notes** — Add notes to any job, visible to all users
-- **Shared database** — All PCs share one SQLite database file over your office network
-- **Offline** — Works fully offline once the database file is accessible
-- **No server needed** — No web server, no cloud, no hosting. Just a shared folder on your network
-
----
-
-## Quick Start (Development)
-
-### Prerequisites
-- Node.js 20+ (with npm)
-- Windows 10/11
-
-```bash
-npm install
-npm run dev
-```
-
-This starts:
-1. Vite dev server (UI) on http://localhost:5174
-2. Electron app window that loads the UI
-
-The Electron window opens automatically. On first run you'll see the Setup screen.
-
----
-
-## Building the Installer (.exe)
-
-```bash
-npm run dist
-```
-
-This produces a Windows installer in the `release/` folder. The installer:
-- Installs to Program Files (configurable)
-- Creates a desktop shortcut
-- Creates a Start Menu shortcut
-- Has a custom app icon
-
----
-
-## First-Time Setup
-
-### 1. Set the shared database folder
-
-1. Run the app. The Setup screen appears.
-2. Click **Browse...** to select a shared folder on your office network (e.g. `\\SERVER\SharedFolder`)
-3. The app creates `jobs.db` in that folder
-4. Click **Save & Continue**
-
-> **Important:** The shared folder must be accessible from every PC that runs this app.
-> Use a network share (UNC path like `\\SERVER\SharedFolder`) that all office computers can read/write.
-
-### 2. Log in
-
-The first admin user is created automatically:
-- **Username:** `admin`
-- **Password:** `admin123`
-
-> **Security:** Change the admin password immediately after first login.
-
-### 3. Create staff users
-
-1. Log in as admin
-2. Click **Admin** in the navigation bar
-3. Click **Add User** to create staff accounts
-4. Each staff member can log in with their own credentials
-
----
-
-## Daily Usage
-
-### Creating a job
-1. Click the **+** button at the top of any stage column
-2. Fill in job name (required), client, contact info, due date, etc.
-3. Click **Create Job**
-4. The job appears in the "New Job" column
-
-### Moving jobs between stages
-- **Drag and drop** a job card from one column to another
-- The stage change is recorded automatically with your name and timestamp
-- You can also click a job to open its detail view and use the stage buttons there
-
-### Viewing job details
-- Click any job card to open the detail view
-- See full job info, stage history timeline, and notes
-- Add notes, edit job fields, or move to a different stage
-
-### Editing a job
-- Open the job detail view and click **Edit**
-- Update any field
-
----
-
-## Project Structure
+## Project layout
 
 ```
-├─ electron/                  # Electron main process (Node.js backend)
-│  ├─ main.ts                 # App entry, window creation
-│  ├─ preload.ts              # Secure IPC bridge
-│  ├─ db/
-│  │  ├─ connection.ts        # SQLite database (sql.js) init
-│  │  ├─ migrate.ts           # Schema migrations + seeding
-│  │  ├─ helpers.ts           # sql.js query helpers
-│  ├─ repositories/           # Data access layer
-│  │  ├─ jobsRepo.ts
-│  │  ├─ usersRepo.ts
-│  │  └─ auditRepo.ts
-│  ├─ services/               # Business logic
-│  │  ├─ authService.ts       # Login, password hashing
-│  │  └─ settingsService.ts   # DB path config
-│  └─ ipc/                    # IPC handlers (API for renderer)
-│     ├─ authIpc.ts
-│     ├─ usersIpc.ts
-│     ├─ jobsIpc.ts
-│     └─ settingsIpc.ts
-├─ src/                       # React UI (renderer process)
-│  ├─ pages/
-│  │  ├─ Login.tsx
-│  │  ├─ Board.tsx            # Kanban board
-│  │  ├─ JobDetail.tsx        # Job detail view
-│  │  ├─ Admin.tsx            # User management
-│  │  └─ Setup.tsx            # First-run DB path setup
-│  ├─ components/
-│  │  ├─ KanbanColumn.tsx
-│  │  ├─ JobCard.tsx
-│  │  ├─ JobFormModal.tsx
-│  │  ├─ StageTimeline.tsx
-│  │  ├─ Navbar.tsx
-│  │  └─ ProtectedRoute.tsx
-│  └─ context/
-│     └─ AuthContext.tsx       # Login state management
-├─ package.json
-└─ README.md
+electron/     Main process — SQLite, IPC, Windows shell
+src/          React UI (Vite + Tailwind)
+self-host/    Optional Docker Postgres for a shop server
 ```
 
----
+Data access is Electron IPC (`window.tracker.*`), not a web API. Details for adding tables and stages: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Tech Stack
+## Tech
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop shell | Electron 32 |
-| UI framework | React 18 + TypeScript |
-| Styling | Tailwind CSS 3 |
-| Drag & drop | @hello-pangea/dnd |
-| Database | SQL.js (SQLite compiled to WebAssembly) |
-| Auth | bcryptjs (password hashing) |
-| Icons | Lucide React |
-| Installer | electron-builder (NSIS) |
-
----
-
-## Common Tasks
-
-### Adding a new database table
-1. Add a migration in `electron/db/migrate.ts`
-2. Add the repository functions in `electron/repositories/`
-3. Add IPC handlers in `electron/ipc/`
-4. Add the API method in `electron/preload.ts`
-5. Update `src/shared-types.ts` if needed
-6. Build the UI in `src/`
-
-### Customizing stages
-Edit `src/data/stages.ts` to change stage names, order, or colours.
-
-### Resetting the database
-Delete `jobs.db` (and the `proofs` folder next to it). Local installs: `%APPDATA%\signage-job-tracker\`. Shared folder: the path you chose at setup. The app recreates the file on the next launch with a fresh admin account.
-
----
+Electron 32 · React 18 · TypeScript · Tailwind · sql.js (SQLite) · electron-builder (NSIS)
 
 ## License
 
-All rights reserved unless a license file is added. You can download and run a local copy from [Releases](https://github.com/MitchellPel/Joblio/releases/latest).
-
-## Self-host server
-
-The office Docker stack (Postgres, PostgREST, nginx) is in `self-host/`. Copy that folder to the server, copy `.env.example` to `.env`, then `docker compose up -d`. See `self-host/README.md`.
+[Apache License 2.0](LICENSE). The Joblio name and logo are marks of the project; the license does not grant a trademark right to rebrand the app as your own product.

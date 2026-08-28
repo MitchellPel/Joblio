@@ -2,8 +2,9 @@
   "name": "signage-job-tracker",
   "version": "0.4.23",
   "private": true,
-  "description": "Joblio - Windows desktop app for tracking signage jobs through your company's workflow",
-  "author": "Signage Co.",
+  "license": "Apache-2.0",
+  "description": "Windows desktop job tracker for sign shops. Electron + React. One PC, no server.",
+  "author": "Mitchell Pel",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
