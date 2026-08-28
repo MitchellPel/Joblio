@@ -1,0 +1,11 @@
+{
+  "composeDir": "C:\\Joblio-selfhost",
+  "shareRoot": "D:\\Joblio DB\\Jobtracker",
+  "healthUrl": "http://127.0.0.1:8080/health",
+  "restProbeUrl": "http://127.0.0.1:8080/rest/v1/users?select=id&limit=1",
+  "ngrokTaskName": "JoblioNgrok",
+  "endpointPublisherTaskName": "JoblioEndpointPublisher",
+  "checkIntervalSeconds": 45,
+  "healCooldownSeconds": 90,
+  "backupMaxAgeHours": 36
+}

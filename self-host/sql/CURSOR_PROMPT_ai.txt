@@ -1,0 +1,22 @@
+Joblio AI on this Joblio / Postgres server. Keep it light (3B model, 4 CPU threads).
+
+1. Install Ollama for Windows (https://ollama.com or winget install Ollama.Ollama).
+2. Set persistent env var OLLAMA_HOST=0.0.0.0:11434 so staff PCs can reach it. Restart Ollama.
+3. ollama pull llama3.2:3b
+   Do not pull 7B/8B/70B models.
+4. Allow TCP 11434 inbound from the office LAN in Windows Firewall.
+5. Apply add_ai.sql on Docker Postgres (users.can_use_ai). Safe to re-run.
+6. Create \\server\D\Joblio DB\Jobtracker\joblio-ollama.json with this machine’s LAN IP (not 127.0.0.1):
+
+{
+  "url": "http://SERVER-LAN-IP:11434",
+  "model": "llama3.2:3b",
+  "num_thread": 4,
+  "num_ctx": 2048
+}
+
+7. Folder \\server\D\Joblio DB\Jobtracker\ai-prices\ holds supplier Excels (many files OK) and notes.txt (chat “remember …”).
+8. On first Joblio AI use, the app creates joblio-ai-intelligence.md on the share (like CLAUDE.md). Edit it to tune tone and rules without rebuilding the app.
+9. Confirm ollama list shows llama3.2:3b and http://127.0.0.1:11434/api/tags works here.
+
+Do not raise num_thread above 4.

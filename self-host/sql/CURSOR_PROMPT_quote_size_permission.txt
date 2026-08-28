@@ -1,0 +1,18 @@
+Joblio server — Cut / Print List permission (can_manage_quote_sizes)
+
+Lets an admin tick Cut / Print List on a staff user so they can post, edit, complete, and delete requests. Everyone can still reply and tick Done.
+
+On the Docker host:
+
+  cd C:\Joblio-selfhost
+  Get-Content "\\server\D\Joblio DB\Jobtracker\self-host-sql\add_quote_size_permission.sql" -Raw | docker compose exec -T db psql -U joblio -d joblio
+
+Then:
+
+  docker compose exec -T db psql -U joblio -d joblio -c "SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'can_manage_quote_sizes';"
+
+Expect: can_manage_quote_sizes
+
+  docker compose restart postgrest
+
+Do NOT run docker compose down -v.

@@ -1,0 +1,19 @@
+Joblio server — Cut / Print List (quote_sizes tables)
+
+Adds tables so the owner can post a cut / print request (name, scope, image) and staff can reply in chat, including pictures.
+
+On the Docker host:
+
+  cd C:\Joblio-selfhost
+  Get-Content "\\server\D\Joblio DB\Jobtracker\self-host-sql\add_quote_sizes.sql" -Raw | docker compose exec -T db psql -U joblio -d joblio
+  Get-Content "\\server\D\Joblio DB\Jobtracker\self-host-sql\add_quote_size_note_images.sql" -Raw | docker compose exec -T db psql -U joblio -d joblio
+
+Then:
+
+  docker compose exec -T db psql -U joblio -d joblio -c "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'quote_size%';"
+
+Expect: quote_sizes, quote_size_notes, quote_size_mentions, quote_size_seen
+
+  docker compose restart postgrest
+
+Do NOT run docker compose down -v.

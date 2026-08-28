@@ -1,0 +1,591 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-canvas: 242 241 237;
+  --color-card: 255 255 255;
+  --color-input: 255 255 255;
+  --color-ink: 38 37 30;
+  --color-surface: 230 229 224;
+  --color-surface-warm: 235 234 229;
+  --color-surface-soft: 247 247 244;
+  --color-surface-deep: 225 224 219;
+
+  --stage-col-design: 232 240 247;
+  --stage-col-production: 247 240 228;
+  --stage-col-install: 228 243 237;
+  --stage-col-collection: 246 235 228;
+
+  /* per-stage column surface + border (drives header tint + drop zone) */
+  --stage-bg-new: 225 224 219;
+  --stage-bg-design: 223 234 246;
+  --stage-bg-production: 246 233 211;
+  --stage-bg-install: 216 240 229;
+  --stage-bg-collection: 245 227 214;
+  --stage-bg-completed: 230 229 224;
+  --stage-border-new: 107 101 96;
+  --stage-border-design: 74 126 184;
+  --stage-border-production: 212 146 42;
+  --stage-border-install: 34 165 116;
+  --stage-border-collection: 208 122 74;
+  --stage-border-completed: 92 90 82;
+
+  --shadow-ring: 0 0 0 1px rgba(38, 37, 30, 0.1);
+  --shadow-raised:
+    0 28px 70px rgba(0, 0, 0, 0.14), 0 14px 32px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(38, 37, 30, 0.1);
+  --shadow-focus: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(38, 37, 30, 0.08);
+  --shadow-card-hover:
+    0 12px 28px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(38, 37, 30, 0.1);
+
+  --scrollbar-thumb: rgba(38, 37, 30, 0.15);
+  --scrollbar-thumb-hover: rgba(38, 37, 30, 0.28);
+
+  color: rgb(var(--color-ink));
+  background: rgb(var(--color-canvas));
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --color-canvas: 28 27 24;
+  --color-card: 42 41 36;
+  --color-input: 38 37 32;
+  --color-ink: 235 233 226;
+  --color-surface: 52 51 46;
+  --color-surface-warm: 58 57 51;
+  --color-surface-soft: 35 34 30;
+  --color-surface-deep: 48 47 42;
+
+  --stage-col-design: 35 50 68;
+  --stage-col-production: 68 52 28;
+  --stage-col-install: 28 58 48;
+  --stage-col-collection: 68 45 32;
+
+  /* dark-mode per-stage column surface + border (deep muted versions) */
+  --stage-bg-new: 48 47 42;
+  --stage-bg-design: 30 44 60;
+  --stage-bg-production: 56 43 24;
+  --stage-bg-install: 24 48 40;
+  --stage-bg-collection: 56 37 28;
+  --stage-bg-completed: 52 51 46;
+  --stage-border-new: 120 114 108;
+  --stage-border-design: 96 146 200;
+  --stage-border-production: 224 164 64;
+  --stage-border-install: 52 190 138;
+  --stage-border-collection: 224 144 96;
+  --stage-border-completed: 120 118 110;
+
+  /* dark hover emphasis for stage surfaces */
+  --stage-glow: 245 78 0;
+
+  --shadow-ring: 0 0 0 1px rgba(235, 233, 226, 0.1);
+  --shadow-raised:
+    0 28px 70px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(235, 233, 226, 0.08);
+  --shadow-focus: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(235, 233, 226, 0.08);
+  --shadow-card-hover:
+    0 12px 28px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(235, 233, 226, 0.1);
+
+  --scrollbar-thumb: rgba(235, 233, 226, 0.18);
+  --scrollbar-thumb-hover: rgba(235, 233, 226, 0.32);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Windows caption buttons sit on the title row only (logo + min/max/close). */
+.jt-titlebar {
+  -webkit-app-region: drag;
+  app-region: drag;
+  height: env(titlebar-area-height, 36px);
+  padding-right: calc(100vw - env(titlebar-area-width, 100vw) - env(titlebar-area-x, 0px));
+}
+
+.jt-titlebar button,
+.jt-titlebar a,
+.jt-menubar button,
+.jt-menubar a,
+.jt-menubar input,
+.jt-menubar [role='button'] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.jt-titlebar-drag {
+  position: fixed;
+  top: env(titlebar-area-y, 0px);
+  left: env(titlebar-area-x, 0px);
+  width: env(titlebar-area-width, 100%);
+  height: env(titlebar-area-height, 36px);
+  z-index: 50;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* Full-screen viewers sit under the native min/max/close row */
+.jt-below-titlebar {
+  top: env(titlebar-area-height, 36px);
+}
+
+/* Shared UI primitives (Tailwind-friendly) */
+@layer components {
+  .jt-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97];
+  }
+  .jt-btn-primary {
+    @apply jt-btn bg-surface-warm text-ink shadow-ring hover:text-danger focus-visible:shadow-focus;
+  }
+  .jt-btn-accent {
+    @apply jt-btn bg-brand text-brand-on shadow-sm hover:bg-brand-hover focus-visible:shadow-focus;
+  }
+  .jt-btn-ghost {
+    @apply jt-btn bg-ink-6 text-ink-55 hover:text-danger;
+  }
+  .jt-btn-danger {
+    @apply jt-btn bg-danger text-white hover:opacity-90;
+  }
+  .jt-input {
+    @apply w-full rounded-lg border border-ink-10 bg-input/60 px-3 py-2 text-sm text-ink placeholder:text-ink-40 transition-colors focus:outline-none focus:border-ink-55 focus:shadow-focus;
+  }
+  .jt-label {
+    @apply mb-1 block text-sm font-medium text-ink-90;
+  }
+  .jt-card {
+    @apply rounded-[10px] border border-ink-10 bg-card shadow-card;
+  }
+  .jt-pill {
+    @apply inline-flex items-center rounded-pill bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-55;
+  }
+  .jt-pill-owner {
+    @apply jt-pill bg-brand/15 text-brand font-semibold;
+  }
+  /* Month-calendar job chips — must stay inside the day cell (grid min-width fix) */
+  .jt-cal-event {
+    @apply box-border flex h-[20px] w-full max-w-full min-w-0 items-center overflow-hidden rounded-md border border-brand/25 bg-brand/[0.08] px-1.5;
+  }
+  .jt-cal-event-weekend {
+    @apply border-danger/35 bg-card;
+  }
+  .jt-cal-event-label {
+    @apply block min-w-0 flex-1 truncate text-[10px] font-medium leading-none text-ink;
+  }
+  /* Legacy aliases */
+  .jt-rigging-pill {
+    @apply jt-cal-event;
+  }
+  .jt-rigging-pill-weekend {
+    @apply jt-cal-event jt-cal-event-weekend;
+  }
+  .jt-page {
+    @apply h-full overflow-hidden bg-canvas;
+  }
+  /* Hidden scroll — modals, settings, etc. */
+  .jt-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .jt-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  /* Visible scroll — kanban job drop columns only */
+  .jt-drop-zone {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  .jt-drop-zone::-webkit-scrollbar {
+    width: 6px;
+  }
+  .jt-drop-zone::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .jt-drop-zone::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  .jt-drop-zone::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+  .jt-section-title {
+    @apply text-xl font-medium tracking-display text-ink;
+  }
+  .jt-eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-caps text-ink-40;
+  }
+
+  /* Stage column surfaces — theme-aware tinted backgrounds */
+  .jt-col-new {
+    @apply bg-[rgb(var(--stage-bg-new))];
+  }
+  .jt-col-design {
+    @apply bg-[rgb(var(--stage-bg-design))];
+  }
+  .jt-col-production {
+    @apply bg-[rgb(var(--stage-bg-production))];
+  }
+  .jt-col-install {
+    @apply bg-[rgb(var(--stage-bg-install))];
+  }
+  .jt-col-collection {
+    @apply bg-[rgb(var(--stage-bg-collection))];
+  }
+  .jt-col-completed {
+    @apply bg-[rgb(var(--stage-bg-completed))];
+  }
+
+  /* Stage header tint — a soft colored wash behind the column label */
+  .jt-col-head-new {
+    @apply bg-[rgb(var(--stage-bg-new))]/70;
+  }
+  .jt-col-head-design {
+    @apply bg-[rgb(var(--stage-bg-design))]/70;
+  }
+  .jt-col-head-production {
+    @apply bg-[rgb(var(--stage-bg-production))]/70;
+  }
+  .jt-col-head-install {
+    @apply bg-[rgb(var(--stage-bg-install))]/70;
+  }
+  .jt-col-head-collection {
+    @apply bg-[rgb(var(--stage-bg-collection))]/70;
+  }
+  .jt-col-head-completed {
+    @apply bg-[rgb(var(--stage-bg-completed))]/70;
+  }
+
+  /* Stage dot with colored ring — "alive" column markers */
+  .jt-stage-dot {
+    @apply inline-flex h-2.5 w-2.5 items-center justify-center rounded-full transition-transform duration-150 ease-out;
+  }
+  .jt-stage-dot-new {
+    @apply bg-stage-new ring-2 ring-stage-new/25;
+  }
+  .jt-stage-dot-design {
+    @apply bg-stage-design ring-2 ring-stage-design/30;
+  }
+  .jt-stage-dot-production {
+    @apply bg-stage-production ring-2 ring-stage-production/30;
+  }
+  .jt-stage-dot-install {
+    @apply bg-stage-install ring-2 ring-stage-install/30;
+  }
+  .jt-stage-dot-collection {
+    @apply bg-stage-collection ring-2 ring-stage-collection/30;
+  }
+  .jt-stage-dot-completed {
+    @apply bg-stage-completed ring-2 ring-stage-completed/25;
+  }
+
+  /* Job card hover: subtle lift + brand-tinted edge (no layout change) */
+  .jt-card-alive {
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+
+  /* Entry motion — overlays fade, panels pop in slightly from below */
+  .jt-anim-overlay {
+    animation: jt-fade-in 160ms ease-out both;
+  }
+  .jt-anim-panel {
+    animation: jt-pop-in 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .jt-anim-item {
+    animation: jt-item-in 180ms ease-out both;
+  }
+}
+
+@keyframes jt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes jt-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes jt-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbars — warm, native-feeling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+/* Touch-ready targets for future tablet */
+@media (pointer: coarse) {
+  .jt-btn,
+  .jt-input {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jt-btn,
+  .jt-input {
+    transition-duration: 0.01ms !important;
+  }
+  .jt-anim-overlay,
+  .jt-anim-panel,
+  .jt-anim-item {
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Glass look-test: warm colour wash, no backdrop-filter (that made shop laptops hitch). */
+html.glass:not(.dark) {
+  --color-canvas: 226 223 216;
+  --color-card: 240 237 230;
+  --color-input: 240 237 230;
+  --color-surface: 214 211 204;
+  --color-surface-warm: 220 217 210;
+  --color-surface-soft: 232 229 222;
+  --jt-glass-fill: linear-gradient(165deg, rgb(232 229 222 / 0.9), rgb(220 216 208 / 0.88));
+  background-color: rgb(var(--color-canvas));
+}
+
+html.dark.glass {
+  --jt-glass-fill: linear-gradient(165deg, rgb(48 46 41 / 0.9), rgb(28 27 24 / 0.88));
+}
+
+html.glass body {
+  background-color: transparent !important;
+}
+
+html.glass body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 42% at 12% 0%, rgb(245 78 0 / 0.22), transparent 62%),
+    radial-gradient(ellipse 48% 40% at 92% 6%, rgb(74 126 184 / 0.26), transparent 60%),
+    radial-gradient(ellipse 42% 36% at 78% 100%, rgb(34 165 116 / 0.18), transparent 58%),
+    radial-gradient(ellipse 38% 32% at 4% 88%, rgb(208 122 74 / 0.2), transparent 55%);
+}
+
+html.dark.glass body::before {
+  background:
+    radial-gradient(ellipse 55% 42% at 12% 0%, rgb(245 78 0 / 0.32), transparent 62%),
+    radial-gradient(ellipse 48% 40% at 92% 6%, rgb(96 146 200 / 0.26), transparent 60%),
+    radial-gradient(ellipse 42% 36% at 78% 100%, rgb(52 190 138 / 0.18), transparent 58%),
+    radial-gradient(ellipse 38% 32% at 4% 88%, rgb(224 144 96 / 0.2), transparent 55%);
+}
+
+html.glass #root {
+  position: relative;
+  z-index: 1;
+  background: var(--jt-glass-fill) !important;
+}
+
+html.glass .bg-canvas:not(.jt-sheet):not(.jt-anim-panel),
+html.glass .jt-page {
+  background-color: transparent;
+}
+
+html.glass .jt-chrome {
+  background: rgb(var(--color-canvas) / 0.45) !important;
+  border-bottom: 1px solid rgb(255 255 255 / 0.35);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.35) inset;
+}
+
+html.dark.glass .jt-chrome {
+  background: rgb(28 27 24 / 0.35) !important;
+  border-bottom-color: rgb(255 255 255 / 0.1);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset;
+}
+
+html.glass .jt-card {
+  background: linear-gradient(
+    145deg,
+    rgb(var(--color-card) / 0.58) 0%,
+    rgb(var(--color-card) / 0.22) 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.42);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 8px 24px rgb(0 0 0 / 0.06);
+}
+
+html.dark.glass .jt-card {
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 0.14) 0%,
+    rgb(255 255 255 / 0.05) 100%
+  );
+  border-color: rgb(255 255 255 / 0.16);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.12) inset,
+    0 8px 24px rgb(0 0 0 / 0.28);
+}
+
+html.glass .jt-input {
+  background-color: rgb(var(--color-card) / 0.45);
+  border-color: rgb(38 37 30 / 0.12);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.25) inset;
+}
+
+html.dark.glass .jt-input {
+  background-color: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.14);
+}
+
+html.glass .jt-btn-ghost {
+  background-color: rgb(var(--color-surface) / 0.7);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.28) inset;
+}
+
+html.dark.glass .jt-btn-ghost {
+  background-color: rgb(255 255 255 / 0.08);
+}
+
+/* Dimmer only — no blur here. Nested backdrop-filter on the overlay
+   would trap the sheet's frost and it would sample a flat veil, not the board. */
+html.glass .jt-anim-overlay {
+  background-color: rgb(38 37 30 / 0.32) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.dark.glass .jt-anim-overlay {
+  background-color: rgb(0 0 0 / 0.42) !important;
+}
+
+/* Same 90% material as the window — job sheets and dialogs */
+html.glass .jt-anim-panel,
+html.glass .jt-sheet {
+  background: var(--jt-glass-fill) !important;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.45) inset,
+    0 24px 64px rgb(0 0 0 / 0.16);
+}
+
+html.dark.glass .jt-anim-panel,
+html.dark.glass .jt-sheet {
+  border-color: rgb(255 255 255 / 0.16);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.1) inset,
+    0 24px 64px rgb(0 0 0 / 0.45);
+}
+
+/* Nested fills must stay clear so they do not punch holes in the frost */
+html.glass .jt-sheet .jt-sheet,
+html.glass .jt-sheet .bg-canvas,
+html.glass .jt-sheet .bg-surface-soft,
+html.glass .jt-sheet .bg-surface {
+  background: transparent !important;
+}
+
+html.glass .jt-sheet .bg-card {
+  background-color: rgb(var(--color-card) / 0.7) !important;
+}
+
+html.dark.glass .jt-sheet .bg-card {
+  background-color: rgb(255 255 255 / 0.1) !important;
+}
+
+html.glass .jt-sheet .jt-input {
+  background-color: rgb(var(--color-card) / 0.75) !important;
+}
+
+html.dark.glass .jt-sheet .jt-input {
+  background-color: rgb(255 255 255 / 0.1) !important;
+}
+
+html.glass .jt-sheet .jt-btn-ghost {
+  background-color: rgb(255 255 255 / 0.3) !important;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.4) inset;
+}
+
+html.dark.glass .jt-sheet .jt-btn-ghost {
+  background-color: rgb(255 255 255 / 0.08) !important;
+}
+
+html.glass .jt-col-new {
+  background-color: rgb(var(--stage-bg-new) / 0.38);
+}
+html.glass .jt-col-design {
+  background-color: rgb(var(--stage-bg-design) / 0.4);
+}
+html.glass .jt-col-production {
+  background-color: rgb(var(--stage-bg-production) / 0.4);
+}
+html.glass .jt-col-install {
+  background-color: rgb(var(--stage-bg-install) / 0.4);
+}
+html.glass .jt-col-collection {
+  background-color: rgb(var(--stage-bg-collection) / 0.4);
+}
+html.glass .jt-col-completed {
+  background-color: rgb(var(--stage-bg-completed) / 0.38);
+}
+
+html.glass .jt-col-head-new,
+html.glass .jt-col-head-design,
+html.glass .jt-col-head-production,
+html.glass .jt-col-head-install,
+html.glass .jt-col-head-collection,
+html.glass .jt-col-head-completed {
+  border: 1px solid rgb(255 255 255 / 0.35);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.4) inset;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html.glass body::before {
+    display: none;
+  }
+  html.glass #root,
+  html.glass .jt-card,
+  html.glass .jt-anim-panel,
+  html.glass .jt-sheet,
+  html.glass .jt-chrome {
+    background: rgb(var(--color-card)) !important;
+  }
+}

@@ -1,0 +1,6 @@
+Apply calendar + notes SQL on this Joblio / Postgres server.
+
+1. Run self-host/sql/add_calendar_notes.sql on Docker Postgres (users.can_delete_notes, rigging_installs.duration_days). Safe to re-run.
+2. Confirm PostgREST reloaded (NOTIFY is in the SQL). No Ollama or share-folder steps.
+
+Do not publish a Joblio installer from this machine.

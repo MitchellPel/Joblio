@@ -1,0 +1,51 @@
+Joblio server — update monitor + scheduled tasks after drive move
+
+The Joblio share moved to:
+  D:\Joblio DB\Jobtracker
+  (UNC: \\server\D\Joblio DB\Jobtracker)
+
+Old path (DO NOT USE):
+  D:\Gary\Job Tracker
+
+## 1. Install updated Cloud Monitor v1.4
+
+Run as Administrator on THIS server:
+  \\server\D\Joblio DB\Jobtracker\Joblio Cloud Monitor\
+  Install Joblio Cloud Monitor (once).exe
+
+Window title must say: Joblio Cloud Monitor v1.4
+Endpoint + API key rows should show D:\Joblio DB\Jobtracker
+
+## 2. Fix scheduled tasks (if endpoint.json stops updating)
+
+Open Task Scheduler and check:
+
+### JoblioEndpointPublisher
+- Any script must write to:
+  D:\Joblio DB\Jobtracker\joblio-endpoint.json
+- NOT D:\Gary\Job Tracker\
+
+### JoblioNgrok
+- Should tunnel localhost:8080 — path unchanged
+- ngrok start script may live in C:\Joblio-selfhost\
+
+To inspect task actions:
+  schtasks /Query /TN "JoblioEndpointPublisher" /V /FO LIST
+  schtasks /Query /TN "JoblioNgrok" /V /FO LIST
+
+Update any action that references "Gary\Job Tracker" to "Joblio DB\Jobtracker".
+
+## 3. Verify files exist on new share
+
+  dir "D:\Joblio DB\Jobtracker\joblio-api-key.txt"
+  dir "D:\Joblio DB\Jobtracker\joblio-endpoint.json"
+  curl http://127.0.0.1:8080/health
+
+Health must return: joblio-ok
+
+## 4. Optional — copy key/endpoint from old share if missing
+
+If files only exist on old drive letter/path, copy them to:
+  D:\Joblio DB\Jobtracker\
+
+Do NOT commit or publish the API key contents.

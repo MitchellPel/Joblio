@@ -1,0 +1,18 @@
+Joblio server — user board colours
+
+Adds users.board_color so each person can have a colour bubble around their name on the board.
+
+On the Docker host:
+
+  cd C:\Joblio-selfhost
+  Get-Content "\\server\D\Joblio DB\Jobtracker\self-host-sql\add_user_board_color.sql" -Raw | docker compose exec -T db psql -U joblio -d joblio
+
+Then:
+
+  docker compose exec -T db psql -U joblio -d joblio -c "SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='board_color';"
+
+Expect: board_color
+
+  docker compose restart postgrest
+
+Do NOT run docker compose down -v.

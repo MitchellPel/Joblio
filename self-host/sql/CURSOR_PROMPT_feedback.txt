@@ -1,0 +1,2 @@
+Apply add_feedback.sql on Joblio Docker Postgres (bugs & change requests in Settings).
+Safe to re-run. Then NOTIFY reloads PostgREST so the new tables are visible.

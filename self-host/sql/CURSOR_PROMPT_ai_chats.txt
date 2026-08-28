@@ -1,0 +1,30 @@
+Joblio server — private AI chats (Postgres)
+
+Staff chats must be stored per login (not one shared thread).
+Admins can review any chat for security. Do NOT wipe data.
+
+## 1. Apply SQL
+
+On the Joblio Docker host:
+
+  cd C:\Joblio-selfhost
+  Get-Content "\\server\D\Joblio DB\Jobtracker\self-host-sql\add_ai_chats.sql" -Raw | docker compose exec -T db psql -U joblio -d joblio
+
+If the file is not on the share yet, run the SQL from the repo:
+
+  self-host/sql/add_ai_chats.sql
+
+Then:
+
+  docker compose exec -T db psql -U joblio -d joblio -c "\d public.ai_chats"
+
+You should see columns: user_id, messages_json, session_json, updated_at.
+
+Reload PostgREST if needed:
+
+  docker compose restart postgrest
+
+## 2. Do NOT
+
+- docker compose down -v
+- Grant this table to the public internet

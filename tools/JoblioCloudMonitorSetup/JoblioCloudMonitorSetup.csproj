@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>JoblioCloudMonitor-Setup</AssemblyName>
+    <RootNamespace>JoblioCloudMonitorSetup</RootNamespace>
+    <Version>1.5.1</Version>
+    <ApplicationIcon>..\JoblioStackMonitor\joblio-monitor.ico</ApplicationIcon>
+    <Product>Joblio Cloud Monitor Setup</Product>
+    <Description>One-click installer for Joblio Cloud Monitor</Description>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="payload.zip" Condition="Exists('payload.zip')" />
+  </ItemGroup>
+</Project>

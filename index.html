@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Joblio</title>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('jobtrack-theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          if (localStorage.getItem('jobtrack-glass') === '1') {
+            document.documentElement.classList.add('glass');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-canvas text-ink antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

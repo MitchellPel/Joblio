@@ -1,0 +1,15 @@
+SELECT setval(pg_get_serial_sequence('public.users','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.users), 1));
+SELECT setval(pg_get_serial_sequence('public.jobs','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.jobs), 1));
+SELECT setval(pg_get_serial_sequence('public.stage_history','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.stage_history), 1));
+SELECT setval(pg_get_serial_sequence('public.job_notes','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.job_notes), 1));
+SELECT setval(pg_get_serial_sequence('public.note_mentions','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.note_mentions), 1));
+SELECT setval(pg_get_serial_sequence('public.job_proofs','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.job_proofs), 1));
+SELECT setval(pg_get_serial_sequence('public.checklist_templates','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.checklist_templates), 1));
+SELECT setval(pg_get_serial_sequence('public.checklist_template_items','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.checklist_template_items), 1));
+SELECT setval(pg_get_serial_sequence('public.job_checklist_items','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.job_checklist_items), 1));
+SELECT setval(pg_get_serial_sequence('public.rigging_installs','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.rigging_installs), 1));
+SELECT setval(pg_get_serial_sequence('public.rigging_alerts_sent','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.rigging_alerts_sent), 1));
+SELECT setval(pg_get_serial_sequence('public.vehicles','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.vehicles), 1));
+SELECT setval(pg_get_serial_sequence('public.vehicle_bookings','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.vehicle_bookings), 1));
+SELECT setval(pg_get_serial_sequence('public.orders','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.orders), 1));
+SELECT setval(pg_get_serial_sequence('public.app_feedback','id'), GREATEST((SELECT COALESCE(MAX(id),1) FROM public.app_feedback), 1));

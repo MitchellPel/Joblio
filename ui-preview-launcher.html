@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobtrack UI — Design previews</title>
+  <style>
+    :root {
+      --bg: #f2f1ed; --fg: #26251e; --muted: rgba(38,37,30,.55);
+      --border: rgba(38,37,30,.1); --accent: #f54e00; --surface: #e6e5e0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--fg); padding: 2.5rem 1.5rem; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 2rem; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+    p { color: var(--muted); margin-bottom: 1.75rem; max-width: 48ch; }
+    .list { display: grid; gap: 0.65rem; }
+    a {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.15rem; background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; text-decoration: none; color: inherit;
+      transition: box-shadow 200ms ease, color 150ms ease;
+    }
+    a:hover { box-shadow: 0 12px 28px rgba(0,0,0,.08); color: var(--accent); }
+    .t { font-weight: 550; letter-spacing: -0.01em; }
+    .d { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+    .tag { font-size: 0.7rem; color: var(--muted); background: var(--surface); padding: 0.25rem 0.55rem; border-radius: 999px; }
+    .note { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 data-od-id="launcher-title">Jobtrack design previews</h1>
+    <p>Marketing + OS widget surfaces. The live product UI lives in the Electron app (`npm run dev`).</p>
+    <div class="list">
+      <a href="landing.html" data-od-id="link-landing">
+        <div><div class="t">Marketing landing</div><div class="d">Hero, features, pipeline, CTA</div></div>
+        <span class="tag">landing.html</span>
+      </a>
+      <a href="widgets/tablet-home.html" data-od-id="link-tablet">
+        <div><div class="t">Tablet home widgets</div><div class="d">My jobs · overdue · quick actions</div></div>
+        <span class="tag">widgets/tablet-home.html</span>
+      </a>
+      <a href="widgets/android-lock.html" data-od-id="link-android">
+        <div><div class="t">Android lock widgets</div><div class="d">Overdue glance · next up · actions</div></div>
+        <span class="tag">widgets/android-lock.html</span>
+      </a>
+    </div>
+    <p class="note">React screens redesigned in-place: Board, JobCard, JobDetail, Login, Setup, Admin, Settings, Archived, Navbar. Backend / IPC / SQLite untouched.</p>
+  </div>
+</body>
+</html>

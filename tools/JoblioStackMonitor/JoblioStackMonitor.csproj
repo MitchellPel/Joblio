@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>JoblioCloudMonitor</AssemblyName>
+    <RootNamespace>JoblioStackMonitor</RootNamespace>
+    <Version>1.5.1</Version>
+    <Product>Joblio Cloud Monitor</Product>
+    <Description>Watches Joblio Docker + ngrok with clear Online/Offline status</Description>
+    <AssemblyTitle>Joblio Cloud Monitor</AssemblyTitle>
+    <ApplicationIcon>joblio-monitor.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="joblio-monitor.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>
