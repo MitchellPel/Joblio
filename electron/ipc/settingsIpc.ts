@@ -1,7 +1,10 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getSettings, setDbPath, getShareRoot, setShareRoot, useLocalDb } from '../services/settingsService';
+import { getSettings, setDbPath, getShareRoot, setShareRoot, useLocalDb, setStoredAiSettings } from '../services/settingsService';
+import { getAiSettingsPublic } from '../services/aiSettings';
+import { resetAiModelCache } from '../services/aiAssistant';
+import { requireAdmin } from './authIpc';
 import { initDatabaseAsync, closeDatabase } from '../db/connection';
 import { startDbSync } from '../services/dbSync';
 import { getGraphicsMode, setGraphicsMode, type GraphicsMode } from '../utils/graphicsMode';
@@ -171,6 +174,49 @@ export function registerSettingsIpc(ipcMain: Electron.IpcMain): void {
       return { error: err.message || 'Failed to save data mode.' };
     }
   });
+
+  ipcMain.handle('settings:getAiSettings', async (_event, token: string) => {
+    const admin = await requireAdmin(token);
+    if ('error' in admin) return { error: admin.error };
+    return getAiSettingsPublic();
+  });
+
+  ipcMain.handle(
+    'settings:setAiSettings',
+    async (
+      _event,
+      token: string,
+      body: {
+        provider: 'off' | 'ollama' | 'openai';
+        ollamaUrl: string;
+        ollamaModel: string;
+        openaiUrl: string;
+        openaiModel: string;
+        openaiApiKey?: string;
+      }
+    ) => {
+      const admin = await requireAdmin(token);
+      if ('error' in admin) return { error: admin.error };
+      const provider = body?.provider;
+      if (provider !== 'off' && provider !== 'ollama' && provider !== 'openai') {
+        return { error: 'Pick Off, Local, or Cloud.' };
+      }
+      try {
+        setStoredAiSettings({
+          provider,
+          ollamaUrl: String(body.ollamaUrl || ''),
+          ollamaModel: String(body.ollamaModel || ''),
+          openaiUrl: String(body.openaiUrl || ''),
+          openaiModel: String(body.openaiModel || ''),
+          openaiApiKey: body.openaiApiKey,
+        });
+        resetAiModelCache();
+        return { ok: true, ...getAiSettingsPublic() };
+      } catch (err: unknown) {
+        return { error: err instanceof Error ? err.message : 'Could not save AI settings.' };
+      }
+    }
+  );
 
   ipcMain.handle('settings:relaunchApp', async () => {
     app.relaunch();

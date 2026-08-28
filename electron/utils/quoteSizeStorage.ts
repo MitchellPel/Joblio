@@ -3,12 +3,7 @@ import path from 'node:path';
 import { getDbPath } from '../db/connection';
 import { getShareRoot, getSettings } from '../services/settingsService';
 
-const DEFAULT_SHARE = '\\\\server\\D\\Joblio DB\\Jobtracker';
 const FOLDER = 'quote-sizes';
-
-const SHARE_DIRS = [
-  `\\\\server\\D\\Joblio DB\\Jobtracker\\${FOLDER}`,
-];
 
 function pushDir(out: string[], d: string | null | undefined): void {
   if (!d) return;
@@ -20,8 +15,8 @@ export function listQuoteSizeDirs(): string[] {
   const out: string[] = [];
   pushDir(out, process.env.JOBLIO_QUOTE_SIZES_DIR);
   try {
-    const share = getShareRoot() || DEFAULT_SHARE;
-    pushDir(out, path.join(share, FOLDER));
+    const share = getShareRoot();
+    if (share) pushDir(out, path.join(share, FOLDER));
   } catch {
     // ignore
   }
@@ -37,7 +32,6 @@ export function listQuoteSizeDirs(): string[] {
   } catch {
     // ignore
   }
-  for (const d of SHARE_DIRS) pushDir(out, d);
   return out;
 }
 

@@ -414,7 +414,7 @@ export default function JoblioAi() {
       } else if (result.cancelled) {
         commitThread(threadId, next.slice(0, -1), aiSession);
       } else {
-        const withReply = [...next, { role: 'assistant', content: result.reply }];
+        const withReply: ChatLine[] = [...next, { role: 'assistant', content: result.reply }];
         const nextSession = result.session || aiSession;
         commitThread(threadId, withReply, nextSession);
         setUsedWeb(!!result.used_web);

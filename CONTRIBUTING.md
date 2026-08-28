@@ -46,6 +46,7 @@ Adding a table: migration → repository → IPC → preload → types → UI.
 - Dark / light contrast, empty states, error copy
 - Docs that make the first 10 minutes obvious
 - Tests that cover login, board, setup, and proofs without needing the shop share
+- Joblio AI: local Ollama vs cloud, turning it off, prompt quality
 
 ## License
 

@@ -133,6 +133,41 @@ interface TrackerApi {
   setGraphicsMode: (
     mode: 'soft' | 'hard'
   ) => Promise<{ ok: boolean; mode: 'soft' | 'hard'; needsRestart: boolean } | { error: string }>;
+  getAiSettings: (token: string) => Promise<
+    | {
+        provider: 'off' | 'ollama' | 'openai';
+        source: 'this-pc' | 'share-file' | 'off';
+        ollamaUrl: string;
+        ollamaModel: string;
+        openaiUrl: string;
+        openaiModel: string;
+        openaiKeySet: boolean;
+      }
+    | { error: string }
+  >;
+  setAiSettings: (
+    token: string,
+    body: {
+      provider: 'off' | 'ollama' | 'openai';
+      ollamaUrl: string;
+      ollamaModel: string;
+      openaiUrl: string;
+      openaiModel: string;
+      openaiApiKey?: string;
+    }
+  ) => Promise<
+    | {
+        ok: true;
+        provider: 'off' | 'ollama' | 'openai';
+        source: 'this-pc' | 'share-file' | 'off';
+        ollamaUrl: string;
+        ollamaModel: string;
+        openaiUrl: string;
+        openaiModel: string;
+        openaiKeySet: boolean;
+      }
+    | { error: string }
+  >;
   getDataBackend: () => Promise<{
     backend: 'sqlite' | 'selfhost';
     stored: 'sqlite' | 'selfhost';
@@ -312,7 +347,10 @@ interface TrackerApi {
   aiPermissions: (token: string) => Promise<{ can_use: boolean } | { error: string }>;
   aiStatus: (
     token: string
-  ) => Promise<{ ready: boolean; model: string; url: string; error?: string } | { error: string }>;
+  ) => Promise<
+    | { ready: boolean; model: string; url: string; provider?: 'off' | 'ollama' | 'openai'; error?: string }
+    | { error: string }
+  >;
   aiListPriceFiles: (
     token: string
   ) => Promise<{ name: string; size: number; updated_at: string }[] | { error: string }>;

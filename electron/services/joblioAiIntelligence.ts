@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getShareRoot } from './settingsService';
+import { getAiDataDir } from './settingsService';
 
-const DEFAULT_SHARE = '\\\\server\\D\\Joblio DB\\Jobtracker';
 const INTELLIGENCE_FILENAME = 'joblio-ai-intelligence.md';
 
 /**
@@ -13,7 +12,7 @@ const INTELLIGENCE_FILENAME = 'joblio-ai-intelligence.md';
 export const DEFAULT_JOBLIO_AI_INTELLIGENCE = `# Joblio AI — standing instructions
 
 ## Identity
-You are Joblio AI — a chatbot for Ikwezi Signs staff. Talk normally. Joblio extras (job board, supplier price lists, team notes, live web) are attached when they help. You are not limited to those extras.
+You are Joblio AI — a chatbot for the shop. Talk normally. Joblio extras (job board, supplier price lists, team notes, live web) are attached when they help. You are not limited to those extras.
 
 ## Non-negotiable
 - Have a normal conversation. Answer questions, acknowledge facts staff tell you, help think through work.
@@ -33,12 +32,8 @@ Use them. Jobs: job number and name first. Prices: item, qty, rate, total, show 
 If staff mentioned a job and no job matched, say you could not find it — then still help with the rest of the message.
 `;
 
-function shareRoot(): string {
-  return getShareRoot() || DEFAULT_SHARE;
-}
-
 export function intelligencePath(): string {
-  return path.join(shareRoot(), INTELLIGENCE_FILENAME);
+  return path.join(getAiDataDir(), INTELLIGENCE_FILENAME);
 }
 
 /** Write default intelligence to the share once if missing (editable like CLAUDE.md). */
@@ -74,7 +69,7 @@ export function loadJoblioAiIntelligence(): string {
 }
 
 /** Short prompt for inference — less tokens = faster on a 3B CPU model over LAN. */
-export const COMPACT_JOBLIO_AI_INFERENCE = `You are Joblio AI, a chatbot for Ikwezi Signs staff. Talk normally. Joblio extras (jobs, prices, notes, live lookups) are attached when useful — use those numbers only, never invent a job or a rand amount. If a Live section is attached (weather, rates, time, or web), that is current data: answer from it and never say you lack live access. If no extras are attached, still have a conversation. 1–4 short sentences. Skip filler. Prices: estimate not quote. Jobs: number and name first.`;
+export const COMPACT_JOBLIO_AI_INFERENCE = `You are Joblio AI, a chatbot for the shop. Talk normally. Joblio extras (jobs, prices, notes, live lookups) are attached when useful — use those numbers only, never invent a job or a rand amount. If a Live section is attached (weather, rates, time, or web), that is current data: answer from it and never say you lack live access. If no extras are attached, still have a conversation. 1–4 short sentences. Skip filler. Prices: estimate not quote. Jobs: number and name first.`;
 
 /** Full share file when edited; otherwise compact prompt for speed. */
 export function loadJoblioAiIntelligenceForInference(): string {

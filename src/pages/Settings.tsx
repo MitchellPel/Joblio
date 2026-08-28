@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, Save, HardDrive, RefreshCw, Download, RotateCcw, Sun, Moon, Palette, Sparkles, Monitor, Cloud } from 'lucide-react';
+import { FolderOpen, Save, HardDrive, RefreshCw, Download, RotateCcw, Sun, Moon, Palette, Sparkles, Monitor, Cloud, Bot } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import WhatsNew from '../components/WhatsNew';
@@ -8,7 +8,7 @@ import BoardColorPicker from '../components/BoardColorPicker';
 
 export default function Settings() {
   const { theme, setTheme, glass, setGlass } = useTheme();
-  const { token, user, refreshSession } = useAuth();
+  const { token, user, refreshSession, isAdmin } = useAuth();
   const [boardColor, setBoardColor] = useState<string | null>(user?.board_color ?? null);
   const [boardColorError, setBoardColorError] = useState('');
   const [boardColorSaving, setBoardColorSaving] = useState(false);
@@ -22,6 +22,15 @@ export default function Settings() {
   const [dataBackend, setDataBackendState] = useState<'sqlite' | 'selfhost'>('sqlite');
   const [dataBackendLocked, setDataBackendLocked] = useState(false);
   const [dataBackendNeedsRestart, setDataBackendNeedsRestart] = useState(false);
+  const [aiProvider, setAiProvider] = useState<'off' | 'ollama' | 'openai'>('off');
+  const [aiSource, setAiSource] = useState<'this-pc' | 'share-file' | 'off'>('off');
+  const [aiOllamaUrl, setAiOllamaUrl] = useState('http://127.0.0.1:11434');
+  const [aiOllamaModel, setAiOllamaModel] = useState('auto');
+  const [aiOpenaiUrl, setAiOpenaiUrl] = useState('https://api.openai.com/v1');
+  const [aiOpenaiModel, setAiOpenaiModel] = useState('gpt-4o-mini');
+  const [aiOpenaiKey, setAiOpenaiKey] = useState('');
+  const [aiKeySet, setAiKeySet] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
 
   const [checking, setChecking] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<{
@@ -82,6 +91,18 @@ export default function Settings() {
       }));
       setDataBackendState(backend.backend);
       setDataBackendLocked(!!backend.envLocked);
+      if (token && user?.role === 'admin' && typeof window.tracker.getAiSettings === 'function') {
+        const ai = await window.tracker.getAiSettings(token);
+        if (!('error' in ai)) {
+          setAiProvider(ai.provider);
+          setAiSource(ai.source);
+          setAiOllamaUrl(ai.ollamaUrl);
+          setAiOllamaModel(ai.ollamaModel);
+          setAiOpenaiUrl(ai.openaiUrl);
+          setAiOpenaiModel(ai.openaiModel);
+          setAiKeySet(ai.openaiKeySet);
+        }
+      }
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Failed to load settings' });
     } finally {
@@ -189,6 +210,34 @@ export default function Settings() {
     });
   }
 
+  async function handleSaveAi() {
+    if (!token) return;
+    setAiSaving(true);
+    setMessage(null);
+    const result = await window.tracker.setAiSettings(token, {
+      provider: aiProvider,
+      ollamaUrl: aiOllamaUrl,
+      ollamaModel: aiOllamaModel,
+      openaiUrl: aiOpenaiUrl,
+      openaiModel: aiOpenaiModel,
+      openaiApiKey: aiOpenaiKey.trim() || undefined,
+    });
+    setAiSaving(false);
+    if ('error' in result) {
+      setMessage({ type: 'error', text: result.error });
+      return;
+    }
+    setAiProvider(result.provider);
+    setAiSource(result.source);
+    setAiOllamaUrl(result.ollamaUrl);
+    setAiOllamaModel(result.ollamaModel);
+    setAiOpenaiUrl(result.openaiUrl);
+    setAiOpenaiModel(result.openaiModel);
+    setAiKeySet(result.openaiKeySet);
+    setAiOpenaiKey('');
+    setMessage({ type: 'success', text: 'Joblio AI settings saved on this PC.' });
+  }
+
   async function handleCheckForUpdates() {
     setChecking(true);
     setUpdateStatus({ type: 'checking', text: 'Checking for updates…' });
@@ -229,8 +278,10 @@ export default function Settings() {
                 <h2 className="text-base font-medium text-ink">Data mode</h2>
               </div>
               <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                This PC only. Office share is what staff use today. Self-host talks to Docker
-                (LAN when in the office, tunnel when away). Restart after switching.
+                This PC uses SQLite (local or a shared folder). Self-host talks to Docker Postgres:
+                LAN in the office, an optional tunnel (ngrok or similar) when staff log in from
+                outside. Put those URLs in <span className="font-mono">.env.selfhost</span> — they
+                are not baked into the app. Restart after switching.
               </p>
               <div className="inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
                 <button
@@ -278,6 +329,118 @@ export default function Settings() {
                 </div>
               )}
             </div>
+
+            {isAdmin && (
+              <div className="jt-card p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-ink-55" />
+                  <h2 className="text-base font-medium text-ink">Joblio AI</h2>
+                </div>
+                <p className="mb-4 text-sm leading-relaxed text-ink-55">
+                  Early feature. Pick a model that runs on this PC (Ollama) or a cloud API
+                  (OpenAI-compatible). The API key stays on this computer. Shop Ollama on a share
+                  file still works until you save a choice here.
+                </p>
+                {aiSource === 'share-file' && aiProvider === 'ollama' && (
+                  <p className="mb-3 text-xs text-ink-40">
+                    Using the office <span className="font-mono">joblio-ollama.json</span> file until
+                    you save settings on this PC.
+                  </p>
+                )}
+                <div className="mb-4 inline-flex flex-wrap rounded-lg border border-ink-10 bg-surface-soft p-1">
+                  {(
+                    [
+                      ['off', 'Off'],
+                      ['ollama', 'Local (Ollama)'],
+                      ['openai', 'Cloud'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setAiProvider(id)}
+                      className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                        aiProvider === id ? 'bg-card text-ink shadow-ring' : 'text-ink-55 hover:text-ink'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {aiProvider === 'ollama' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="jt-label">Ollama URL</label>
+                      <input
+                        type="text"
+                        value={aiOllamaUrl}
+                        onChange={(e) => setAiOllamaUrl(e.target.value)}
+                        className="jt-input font-mono text-[13px]"
+                        placeholder="http://127.0.0.1:11434"
+                      />
+                    </div>
+                    <div>
+                      <label className="jt-label">Model</label>
+                      <input
+                        type="text"
+                        value={aiOllamaModel}
+                        onChange={(e) => setAiOllamaModel(e.target.value)}
+                        className="jt-input font-mono text-[13px]"
+                        placeholder="auto"
+                      />
+                      <p className="mt-1 text-xs text-ink-40">Use auto to pick the first installed model.</p>
+                    </div>
+                  </div>
+                )}
+                {aiProvider === 'openai' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="jt-label">API base URL</label>
+                      <input
+                        type="text"
+                        value={aiOpenaiUrl}
+                        onChange={(e) => setAiOpenaiUrl(e.target.value)}
+                        className="jt-input font-mono text-[13px]"
+                        placeholder="https://api.openai.com/v1"
+                      />
+                      <p className="mt-1 text-xs text-ink-40">
+                        OpenAI, Groq, Together, or any host with /chat/completions.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="jt-label">Model</label>
+                      <input
+                        type="text"
+                        value={aiOpenaiModel}
+                        onChange={(e) => setAiOpenaiModel(e.target.value)}
+                        className="jt-input font-mono text-[13px]"
+                        placeholder="gpt-4o-mini"
+                      />
+                    </div>
+                    <div>
+                      <label className="jt-label">API key</label>
+                      <input
+                        type="password"
+                        value={aiOpenaiKey}
+                        onChange={(e) => setAiOpenaiKey(e.target.value)}
+                        className="jt-input font-mono text-[13px]"
+                        placeholder={aiKeySet ? 'Saved on this PC — type to replace' : 'sk-…'}
+                        autoComplete="off"
+                      />
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveAi}
+                  disabled={aiSaving}
+                  className="jt-btn-primary mt-4 disabled:opacity-40"
+                >
+                  <Save className="h-4 w-4" />
+                  {aiSaving ? 'Saving…' : 'Save AI settings'}
+                </button>
+              </div>
+            )}
 
             <div className="jt-card p-6">
               <div className="mb-4 flex items-center gap-2">

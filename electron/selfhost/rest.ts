@@ -29,10 +29,6 @@ function parseEnvFile(filePath: string): Record<string, string> {
   return out;
 }
 
-const SHARE_ROOT = '\\\\server\\D\\Joblio DB\\Jobtracker';
-const DEFAULT_LAN = 'http://192.168.1.107:8080';
-const DEFAULT_BOOTSTRAP = 'https://rural-garden-cheek.ngrok-free.dev';
-const DEFAULT_PROOFS = '\\\\server\\D\\Joblio DB\\Jobtracker\\proofs';
 const API_KEY_FILE = 'joblio-api-key.txt';
 
 function configuredShareRoot(): string | null {
@@ -44,18 +40,15 @@ function configuredShareRoot(): string | null {
 }
 
 function readShareApiKey(): string {
-  const roots = [configuredShareRoot(), SHARE_ROOT].filter(Boolean) as string[];
-  for (const root of roots) {
-    const p = path.join(root, API_KEY_FILE);
-    try {
-      if (!fs.existsSync(p)) continue;
-      const k = fs.readFileSync(p, 'utf8').trim();
-      if (k) return k;
-    } catch {
-      // try next
-    }
+  const root = configuredShareRoot();
+  if (!root) return '';
+  const p = path.join(root, API_KEY_FILE);
+  try {
+    if (!fs.existsSync(p)) return '';
+    return fs.readFileSync(p, 'utf8').trim();
+  } catch {
+    return '';
   }
-  return '';
 }
 
 /** Drop cached env so a newly chosen share path is picked up immediately. */
@@ -93,7 +86,6 @@ function readShareEndpointUrl(): string {
     configuredShareRoot()
       ? path.join(configuredShareRoot()!, 'joblio-endpoint.json')
       : '',
-    path.join(SHARE_ROOT, 'joblio-endpoint.json'),
   ].filter(Boolean) as string[];
   for (const p of paths) {
     try {
@@ -141,9 +133,7 @@ export function getSelfHostEnv(): Env {
   }
 
   const fileEnv = loadFileEnv();
-  const lanUrl = stripSlash(
-    process.env.JOBLIO_LAN_API_URL || fileEnv.JOBLIO_LAN_API_URL || DEFAULT_LAN
-  );
+  const lanUrl = stripSlash(process.env.JOBLIO_LAN_API_URL || fileEnv.JOBLIO_LAN_API_URL || '');
 
   const bootstrapUrl = stripSlash(
     process.env.JOBLIO_BOOTSTRAP_URL ||
@@ -152,7 +142,7 @@ export function getSelfHostEnv(): Env {
       fileEnv.JOBLIO_API_URL ||
       readShareEndpointUrl() ||
       readCachedTunnelUrl() ||
-      DEFAULT_BOOTSTRAP
+      ''
   );
 
   const apiKey =
@@ -162,11 +152,11 @@ export function getSelfHostEnv(): Env {
     fileEnv.SUPABASE_SECRET_KEY ||
     readShareApiKey();
 
-  const shareRoot = configuredShareRoot() || SHARE_ROOT;
+  const shareRoot = configuredShareRoot();
   const proofsDir =
     process.env.JOBLIO_PROOFS_DIR ||
     fileEnv.JOBLIO_PROOFS_DIR ||
-    path.join(shareRoot, 'proofs');
+    (shareRoot ? path.join(shareRoot, 'proofs') : '');
 
   if (!lanUrl && !bootstrapUrl) {
     throw new Error('Self-host mode needs a LAN or bootstrap API URL.');
@@ -229,7 +219,6 @@ async function resolveTunnelUrl(env: Env): Promise<string | null> {
     configuredShareRoot()
       ? path.join(configuredShareRoot()!, 'joblio-endpoint.json')
       : '',
-    path.join(SHARE_ROOT, 'joblio-endpoint.json'),
   ].filter(Boolean) as string[];
 
   for (const p of sharePaths) {

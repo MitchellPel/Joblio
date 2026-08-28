@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { dialog, BrowserWindow } from 'electron';
-import { getShareRoot } from './settingsService';
+import { getAiDataDir } from './settingsService';
+import { resolveAiRuntime, type AiRuntime } from './aiSettings';
 import { isSelfHostMode } from '../db/backendMode';
 import { searchJobs, getJob } from '../repositories/jobsRepo';
 import { searchJobsCloud, getJobCloud, listNotesCloud } from '../selfhost/jobsCloud';
@@ -30,9 +31,7 @@ import {
   webSearch,
 } from './joblioAiLiveLookup';
 
-const DEFAULT_SHARE = '\\\\server\\D\\Joblio DB\\Jobtracker';
 const DEFAULT_MODEL = 'auto';
-const DEFAULT_OLLAMA = 'http://127.0.0.1:11434';
 
 /** Model preference order when config says "auto" — first available wins. */
 const MODEL_PREFERENCE = [
@@ -82,7 +81,7 @@ function emitAiStatus(label: string | null): void {
 }
 
 function shareRoot(): string {
-  return getShareRoot() || DEFAULT_SHARE;
+  return getAiDataDir();
 }
 
 function pricesDir(): string {
@@ -104,21 +103,14 @@ function ensurePricesDir(): string {
 }
 
 function readOllamaCfg(): OllamaCfg {
-  const file = path.join(shareRoot(), 'joblio-ollama.json');
-  let raw: Record<string, unknown> = {};
-  try {
-    if (fs.existsSync(file)) {
-      raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>;
-    }
-  } catch {
-    // keep defaults
-  }
-  const url = String(raw.url || process.env.JOBLIO_OLLAMA_URL || DEFAULT_OLLAMA).replace(/\/$/, '');
-  const rawModel = String(raw.model || process.env.JOBLIO_OLLAMA_MODEL || DEFAULT_MODEL).trim();
-  const model = rawModel === 'auto' && detectedModel ? detectedModel : rawModel;
-  const num_thread = Math.max(1, Math.min(8, Number(raw.num_thread) || 4));
-  const num_ctx = Math.max(512, Math.min(4096, Number(raw.num_ctx) || 2048));
-  return { url, model, num_thread, num_ctx };
+  const rt = resolveAiRuntime();
+  const model = rt.model === 'auto' && detectedModel ? detectedModel : rt.model;
+  return {
+    url: rt.url.replace(/\/$/, ''),
+    model,
+    num_thread: rt.num_thread,
+    num_ctx: rt.num_ctx,
+  };
 }
 
 async function autoDetectModel(url: string): Promise<string | null> {
@@ -143,16 +135,13 @@ async function autoDetectModel(url: string): Promise<string | null> {
 async function ensureModelDetected(): Promise<void> {
   if (detectedModel) return;
   if (detectPromise) { await detectPromise; return; }
-  const file = path.join(shareRoot(), 'joblio-ollama.json');
-  let rawModel = DEFAULT_MODEL;
-  let url = DEFAULT_OLLAMA;
-  try {
-    if (fs.existsSync(file)) {
-      const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>;
-      rawModel = String(raw.model || DEFAULT_MODEL).trim();
-      url = String(raw.url || DEFAULT_OLLAMA).replace(/\/$/, '');
-    }
-  } catch { /* keep defaults */ }
+  const rt = resolveAiRuntime();
+  if (rt.provider !== 'ollama') {
+    detectedModel = rt.model || null;
+    return;
+  }
+  const rawModel = rt.model || DEFAULT_MODEL;
+  const url = rt.url;
   if (rawModel !== 'auto') { detectedModel = rawModel; return; }
   detectPromise = autoDetectModel(url);
   const found = await detectPromise;
@@ -408,13 +397,12 @@ function skipWebRouting(q: string, jobs: string, prices: string, notes: string):
 }
 
 /** One-word model decision: WEB vs LOCAL (after Joblio data is loaded). */
-async function modelWantsWebSearch(cfg: OllamaCfg, question: string, localSummary: string): Promise<boolean> {
-  const raw = await ollamaChat(
-    cfg,
+async function modelWantsWebSearch(question: string, localSummary: string): Promise<boolean> {
+  const raw = await llmChat(
     [
       {
         role: 'system',
-        content: `You route Ikwezi Signs staff questions. Joblio already checked — ${localSummary}. Reply exactly one word: WEB if the answer needs live internet (weather, news, current events, online/market prices not in Joblio, general knowledge). Reply LOCAL if Joblio jobs, supplier lists, or saved notes should answer it.`,
+        content: `You route shop questions. Joblio already checked — ${localSummary}. Reply exactly one word: WEB if the answer needs live internet (weather, news, current events, online/market prices not in Joblio, general knowledge). Reply LOCAL if Joblio jobs, supplier lists, or saved notes should answer it.`,
       },
       { role: 'user', content: question.slice(0, 500) },
     ],
@@ -424,7 +412,6 @@ async function modelWantsWebSearch(cfg: OllamaCfg, question: string, localSummar
 }
 
 async function decideWebSearch(
-  cfg: OllamaCfg,
   question: string,
   jobs: string,
   prices: string,
@@ -435,7 +422,7 @@ async function decideWebSearch(
   const preset = skipWebRouting(question, jobs, prices, notes);
   if (preset === 'local') return false;
   if (preset === 'web') return true;
-  return modelWantsWebSearch(cfg, question, summarizeLocalForRouter(jobs, prices, notes));
+  return modelWantsWebSearch(question, summarizeLocalForRouter(jobs, prices, notes));
 }
 
 const JOB_SEARCH_STOP = new Set([
@@ -684,48 +671,133 @@ function keepModelWarm(cfg: OllamaCfg): void {
   }).catch(() => {});
 }
 
+async function openaiChat(
+  rt: AiRuntime,
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  opts?: { depth?: boolean; route?: boolean }
+): Promise<string> {
+  if (!rt.apiKey) {
+    throw new Error('Cloud AI needs an API key. An admin can add it in Settings → Joblio AI.');
+  }
+  const ctrl = new AbortController();
+  if (!opts?.route) activeChatAbort = ctrl;
+  const t = setTimeout(() => ctrl.abort(), opts?.route ? 15000 : 60000);
+  try {
+    const res = await fetch(`${rt.url.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${rt.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: rt.model,
+        messages,
+        temperature: opts?.route ? 0 : 0.15,
+        max_tokens: opts?.route ? 8 : opts?.depth ? 280 : 100,
+      }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`Cloud AI ${res.status}: ${text.slice(0, 220)}`);
+    }
+    const data = JSON.parse(text) as { choices?: { message?: { content?: string } }[] };
+    const raw = (data.choices?.[0]?.message?.content || '').trim();
+    if (opts?.route) return raw;
+    return raw ? polishAiReply(raw) : "I couldn't form an answer — try asking again in fewer words.";
+  } finally {
+    clearTimeout(t);
+    if (activeChatAbort === ctrl) activeChatAbort = null;
+  }
+}
+
+async function llmChat(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  opts?: { depth?: boolean; route?: boolean }
+): Promise<string> {
+  const rt = resolveAiRuntime();
+  if (rt.provider === 'off') {
+    throw new Error('Joblio AI is off. An admin can enable Local (Ollama) or Cloud in Settings.');
+  }
+  if (rt.provider === 'openai') return openaiChat(rt, messages, opts);
+  return ollamaChat(readOllamaCfg(), messages, opts);
+}
+
+export function resetAiModelCache(): void {
+  detectedModel = null;
+  detectPromise = null;
+}
+
 export async function aiStatus(): Promise<{
   ready: boolean;
   model: string;
   url: string;
+  provider: 'off' | 'ollama' | 'openai';
   error?: string;
 }> {
+  const rt = resolveAiRuntime();
+  if (rt.provider === 'off') {
+    return {
+      ready: false,
+      model: '',
+      url: '',
+      provider: 'off',
+      error: 'Joblio AI is off. An admin can enable Local (Ollama) or Cloud in Settings.',
+    };
+  }
+  if (rt.provider === 'openai') {
+    if (!rt.apiKey) {
+      return {
+        ready: false,
+        model: rt.model,
+        url: rt.url,
+        provider: 'openai',
+        error: 'Cloud AI needs an API key. Add it in Settings → Joblio AI.',
+      };
+    }
+    return { ready: true, model: rt.model, url: rt.url, provider: 'openai' };
+  }
+
   await ensureModelDetected();
   const cfg = readOllamaCfg();
   try {
     const res = await fetch(`${cfg.url}/api/tags`, {
       signal: AbortSignal.timeout(2500),
     });
-    if (!res.ok) return { ready: false, model: cfg.model, url: cfg.url, error: `Ollama HTTP ${res.status}` };
+    if (!res.ok) {
+      return { ready: false, model: cfg.model, url: cfg.url, provider: 'ollama', error: `Ollama HTTP ${res.status}` };
+    }
     const data = (await res.json()) as { models?: { name: string }[] };
     const names = (data.models || []).map((m) => m.name);
-    const has = names.some((n) => n === cfg.model || n.startsWith(`${cfg.model}:`) || n.startsWith(cfg.model.split(':')[0]));
+    const has = names.some(
+      (n) => n === cfg.model || n.startsWith(`${cfg.model}:`) || n.startsWith(cfg.model.split(':')[0])
+    );
     if (!has) {
-      // If config says "auto" but nothing matched preference, pick whatever is available
       if (cfg.model === 'auto' || detectedModel === cfg.model) {
         if (names.length) {
           detectedModel = names[0];
           const refreshed = readOllamaCfg();
           keepModelWarm(refreshed);
-          return { ready: true, model: refreshed.model, url: refreshed.url };
+          return { ready: true, model: refreshed.model, url: refreshed.url, provider: 'ollama' };
         }
       }
       return {
         ready: false,
         model: cfg.model,
         url: cfg.url,
-        error: `Model ${cfg.model} is not installed. On the Joblio server run: ollama pull ${cfg.model}`,
+        provider: 'ollama',
+        error: `Model ${cfg.model} is not installed. On this PC run: ollama pull ${cfg.model}`,
       };
     }
     keepModelWarm(cfg);
-    return { ready: true, model: cfg.model, url: cfg.url };
+    return { ready: true, model: cfg.model, url: cfg.url, provider: 'ollama' };
   } catch {
     return {
       ready: false,
       model: cfg.model,
       url: cfg.url,
-      error:
-        `Cannot reach Ollama at ${cfg.url}. Install Ollama on the Joblio server, pull ${cfg.model}, set OLLAMA_HOST=0.0.0.0:11434, then put the server LAN IP in joblio-ollama.json on the share.`,
+      provider: 'ollama',
+      error: `Cannot reach Ollama at ${cfg.url}. Install Ollama, pull a model, then set the URL in Settings → Joblio AI.`,
     };
   }
 }
@@ -742,8 +814,19 @@ export async function runAiChat(
   cancelled?: boolean;
 }> {
   await ensureModelDetected();
+  const rt = resolveAiRuntime();
   const cfg = readOllamaCfg();
-  keepModelWarm(cfg);
+  if (rt.provider === 'ollama') keepModelWarm(cfg);
+  const modelLabel = rt.provider === 'openai' ? rt.model : cfg.model;
+  if (rt.provider === 'off') {
+    return {
+      reply: 'Joblio AI is off. An admin can enable Local (Ollama) or Cloud in Settings.',
+      used_web: false,
+      saved: false,
+      model: '',
+      session: sanitizeAiSession(sessionRaw ?? EMPTY_AI_SESSION),
+    };
+  }
   let session = sanitizeAiSession(sessionRaw ?? EMPTY_AI_SESSION);
   const done = (
     reply: string,
@@ -752,7 +835,7 @@ export async function runAiChat(
     reply,
     used_web: extra?.used_web ?? false,
     saved: extra?.saved ?? false,
-    model: cfg.model,
+    model: modelLabel,
     session,
     cancelled: extra?.cancelled,
   });
@@ -798,8 +881,7 @@ export async function runAiChat(
     }
     try {
       emitAiStatus('Writing a reply…');
-      const reply = await ollamaChat(
-        cfg,
+      const reply = await llmChat(
         [{ role: 'system', content: loadJoblioAiIntelligenceForInference() }, ...history],
         { depth: wantsDepth(last) }
       );
@@ -865,7 +947,7 @@ export async function runAiChat(
   }
 
   emitAiStatus('Deciding if the web is needed…');
-  const usedWeb = await decideWebSearch(cfg, last, jobs, prices, notes, savedOnly);
+  const usedWeb = await decideWebSearch(last, jobs, prices, notes, savedOnly);
   if (usedWeb) emitAiStatus('Searching the web…');
   const web = usedWeb ? await webSearch(last) : '';
 
@@ -904,8 +986,7 @@ export async function runAiChat(
 
   try {
     emitAiStatus(usedWeb || extra.length ? 'Writing a reply…' : 'Thinking…');
-    const reply = await ollamaChat(
-      cfg,
+    const reply = await llmChat(
       [{ role: 'system', content: loadJoblioAiIntelligenceForInference() }, ...history],
       { depth: wantsDepth(last) }
     );

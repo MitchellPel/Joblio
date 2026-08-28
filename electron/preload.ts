@@ -472,6 +472,43 @@ const api = {
     ipcRenderer.invoke('settings:setGraphicsMode', mode) as Promise<
       { ok: boolean; mode: 'soft' | 'hard'; needsRestart: boolean } | { error: string }
     >,
+  getAiSettings: (token: string) =>
+    ipcRenderer.invoke('settings:getAiSettings', token) as Promise<
+      | {
+          provider: 'off' | 'ollama' | 'openai';
+          source: 'this-pc' | 'share-file' | 'off';
+          ollamaUrl: string;
+          ollamaModel: string;
+          openaiUrl: string;
+          openaiModel: string;
+          openaiKeySet: boolean;
+        }
+      | { error: string }
+    >,
+  setAiSettings: (
+    token: string,
+    body: {
+      provider: 'off' | 'ollama' | 'openai';
+      ollamaUrl: string;
+      ollamaModel: string;
+      openaiUrl: string;
+      openaiModel: string;
+      openaiApiKey?: string;
+    }
+  ) =>
+    ipcRenderer.invoke('settings:setAiSettings', token, body) as Promise<
+      | {
+          ok: true;
+          provider: 'off' | 'ollama' | 'openai';
+          source: 'this-pc' | 'share-file' | 'off';
+          ollamaUrl: string;
+          ollamaModel: string;
+          openaiUrl: string;
+          openaiModel: string;
+          openaiKeySet: boolean;
+        }
+      | { error: string }
+    >,
   getDataBackend: () =>
     ipcRenderer.invoke('settings:getDataBackend') as Promise<{
       backend: 'sqlite' | 'selfhost';
@@ -753,7 +790,8 @@ const api = {
     ipcRenderer.invoke('ai:permissions', token) as Promise<{ can_use: boolean } | { error: string }>,
   aiStatus: (token: string) =>
     ipcRenderer.invoke('ai:status', token) as Promise<
-      { ready: boolean; model: string; url: string; error?: string } | { error: string }
+      | { ready: boolean; model: string; url: string; provider?: 'off' | 'ollama' | 'openai'; error?: string }
+      | { error: string }
     >,
   aiListPriceFiles: (token: string) =>
     ipcRenderer.invoke('ai:listPriceFiles', token) as Promise<

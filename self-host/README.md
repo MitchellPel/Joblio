@@ -30,20 +30,24 @@ curl http://127.0.0.1:8080/health
 
 You should see `joblio-ok`.
 
-API from other PCs on the LAN (use your server IP):
+API from other PCs on the LAN (use **your** server IP, not an example from this repo):
 
 ```text
-http://192.168.1.107:8080
+http://YOUR-SERVER-IP:8080
 ```
+
+## Away from the office (ngrok or another tunnel)
+
+When staff are off the LAN, point a tunnel at port 8080 (we used **ngrok** in the shop). Put the public URL in `.env.selfhost` as `JOBLIO_BOOTSTRAP_URL` / `JOBLIO_API_URL`. Joblio prefers LAN when it can reach `/health`, then falls back to the tunnel. Do not commit real tunnel URLs.
 
 ## 2. Point Joblio test mode at it
 
 On your **dev PC**, create `.env.selfhost` in the repo root:
 
 ```env
-JOBLIO_API_URL=http://192.168.1.107:8080
+JOBLIO_API_URL=http://YOUR-SERVER-IP:8080
 JOBLIO_API_KEY=joblio-local
-JOBLIO_PROOFS_DIR=\\server\Gary\Job Tracker\proofs
+JOBLIO_PROOFS_DIR=\\SERVER\Share\proofs
 ```
 
 Then:
@@ -80,7 +84,7 @@ docker compose exec -T db pg_dump -U joblio joblio > backup.sql
 ## Security
 
 - Keep **8080/5432 off the public internet** (office LAN only).
-- Boss overseas still needs VPN/tunnel later if you stay LAN-only.
+- Boss overseas still needs a **tunnel** (ngrok or similar) or VPN if you stay LAN-only. See above.
 
 ## Reset Docker DB only
 

@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.24',
+    date: '2026-08-28',
+    highlights: [
+      'Admin → Settings: Joblio AI can be Off, Local (Ollama on this PC), or Cloud (your API URL and key)',
+      'Out-of-office / self-host login uses the URLs you set — no office tunnel address baked into the app',
+    ],
+  },
+  {
     version: '0.4.23',
     date: '2026-08-28',
     highlights: [

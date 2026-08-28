@@ -44,7 +44,25 @@ Shop PCs that already share a `jobs.db` keep using **Use shared folder** and **R
 - **One PC or a team** — local database, or one `jobs.db` on a network share
 - **People and audit** — logins, roles, notes, stage history with who and when
 - **Proofs, calendar, cut / print list** — the shop tools we actually use
-- **Offline** — no hosting, no API key, no Docker required to try it
+- **Out of the office** — optional Docker self-host; LAN in the shop, ngrok-style tunnel when away (URLs in `.env.selfhost`, not hardcoded)
+- **Joblio AI** — admin picks Off, Local (Ollama), or Cloud (OpenAI-compatible). Early; not required to run the board
+- **Offline board** — no hosting required to try jobs on one PC
+
+## Out of the office (self-host + tunnel)
+
+Joblio can talk to a shop **Docker** stack (Postgres) instead of a local `jobs.db`. On the LAN that is a normal URL. **Away from the office** we used a public tunnel (**ngrok** or similar) so login and the board still work.
+
+Those URLs and keys live in `.env.selfhost` or a share file — they are **not** hardcoded. Copy [`.env.example`](.env.example) and set your own LAN URL and tunnel. See [`self-host/README.md`](self-host/README.md).
+
+## Joblio AI (early)
+
+AI is started, not finished. An **admin** chooses in Settings:
+
+- **Off**
+- **Local (Ollama)** — URL + model on this PC or a shop server
+- **Cloud** — OpenAI-compatible URL, model, and API key (key stays on that PC)
+
+Older shop installs can still read `joblio-ollama.json` on the share until an admin saves a choice in Settings.
 
 Optional office Postgres/Docker stack: [`self-host/`](self-host/README.md).
 

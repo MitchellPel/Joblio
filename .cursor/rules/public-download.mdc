@@ -14,6 +14,7 @@ When this repo is public, a stranger must be able to clone or install Joblio and
 - SQLite is the default. Self-host Docker is optional and documented in `self-host/`
 - Auto-update against `\\server\...` must **quietly skip** if that share does not exist
 - Public installers live on **GitHub Releases** (`https://github.com/MitchellPel/Joblio/releases/latest`). Shop PCs still update from the office share. A version bump must hit **both**.
+- Self-host LAN / ngrok URLs and AI keys live in env or Settings — never bake office IPs or tunnel hostnames into source
 
 ## Team path (office)
 
