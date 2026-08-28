@@ -1,4 +1,4 @@
-﻿# Joblio
+# Joblio
 
 A Windows desktop application for tracking signage jobs through your company's workflow: **New Job → Design → Production → Install / Collection**.
 
@@ -190,3 +190,7 @@ Delete the `jobs.db` file from the shared folder. The app recreates it on the ne
 ## License
 
 Private — Internal company use.
+
+## Self-host server
+
+The office Docker stack (Postgres, PostgREST, nginx) is in `self-host/`. Copy that folder to the server, copy `.env.example` to `.env`, then `docker compose up -d`. See `self-host/README.md`.
