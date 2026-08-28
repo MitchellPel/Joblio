@@ -122,6 +122,7 @@ interface TrackerApi {
 
   getDbPath: () => Promise<{ configured: boolean; path: string | null }>;
   setDbPath: (path: string) => Promise<{ ok: boolean } | { error: string }>;
+  useLocalDb: () => Promise<{ ok: true; path: string } | { error: string }>;
   pickFolder: () => Promise<string | null>;
   getShareRoot: () => Promise<{ path: string | null }>;
   pickShareRoot: () => Promise<

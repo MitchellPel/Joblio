@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.23',
+    date: '2026-08-28',
+    highlights: [
+      'First launch: Start on this PC — jobs stay on this computer, no office share or server needed',
+      'If the office update folder is not on this PC, Joblio skips the check instead of showing an error',
+      'Settings → Database: Use this PC only, or keep pointing at a shared folder for the shop',
+    ],
+  },
+  {
     version: '0.4.22',
     date: '2026-08-27',
     highlights: [

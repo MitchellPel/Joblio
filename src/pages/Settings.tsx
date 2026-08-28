@@ -94,6 +94,23 @@ export default function Settings() {
     if (p) setDbPath(p);
   }
 
+  async function handleUseThisPc() {
+    if (dataBackend === 'selfhost') {
+      setMessage({ type: 'error', text: 'Database path is not used in Self-host mode.' });
+      return;
+    }
+    setSaving(true);
+    setMessage(null);
+    const result = await window.tracker.useLocalDb();
+    if ('error' in result) {
+      setMessage({ type: 'error', text: result.error });
+    } else {
+      setDbPath(result.path);
+      setMessage({ type: 'success', text: 'Jobs will stay on this PC.' });
+    }
+    setSaving(false);
+  }
+
   async function handleSave() {
     if (dataBackend === 'selfhost') {
       setMessage({ type: 'error', text: 'Database path is not used in Self-host mode.' });
@@ -270,7 +287,7 @@ export default function Settings() {
               <p className="mb-4 text-sm leading-relaxed text-ink-55">
                 {dataBackend === 'selfhost'
                   ? 'Not used in Self-host mode — data comes from Docker Postgres.'
-                  : 'Shared network folder for the job database file. All staff PCs must have access to this location.'}
+                  : 'This PC only, or a shared folder so every shop computer uses the same jobs.db.'}
               </p>
               <div className="flex gap-2">
                 <input
@@ -288,6 +305,17 @@ export default function Settings() {
                 >
                   <FolderOpen className="h-4 w-4" />
                   Browse
+                </button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleUseThisPc}
+                  disabled={dataBackend === 'selfhost' || saving}
+                  className="jt-btn-ghost disabled:opacity-40"
+                >
+                  <Monitor className="h-4 w-4" />
+                  Use this PC only
                 </button>
               </div>
               <p className="mt-2 text-xs text-ink-40">

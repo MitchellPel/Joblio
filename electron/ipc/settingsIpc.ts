@@ -1,7 +1,7 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getSettings, setDbPath, getShareRoot, setShareRoot } from '../services/settingsService';
+import { getSettings, setDbPath, getShareRoot, setShareRoot, useLocalDb } from '../services/settingsService';
 import { initDatabaseAsync, closeDatabase } from '../db/connection';
 import { startDbSync } from '../services/dbSync';
 import { getGraphicsMode, setGraphicsMode, type GraphicsMode } from '../utils/graphicsMode';
@@ -39,6 +39,21 @@ export function registerSettingsIpc(ipcMain: Electron.IpcMain): void {
       return { ok: true };
     } catch (err: any) {
       return { error: err.message || 'Failed to initialize database.' };
+    }
+  });
+
+  ipcMain.handle('settings:useLocalDb', async () => {
+    if (isSelfHostMode()) {
+      return { error: 'Database path is locked in self-host mode. Staff share DB is not used.' };
+    }
+    try {
+      const dbPath = useLocalDb();
+      closeDatabase();
+      await initDatabaseAsync();
+      startDbSync();
+      return { ok: true, path: dbPath };
+    } catch (err: any) {
+      return { error: err.message || 'Failed to initialize local database.' };
     }
   });
 

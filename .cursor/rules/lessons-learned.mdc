@@ -1,0 +1,38 @@
+---
+description: Hard-won Joblio lessons — past mistakes and rules so we do not repeat them while coding
+alwaysApply: true
+---
+
+# Lessons Learned (do not forget)
+
+Raw archive: `cursor_chat_program_update_notification.json` (read only when digging into history).
+
+## Never repeat these mistakes
+
+1. **Do not redesign the whole UI** when adding one feature (dark mode once rewrote the layout — had to revert). Change only what was asked.
+2. **Do not push updates unless the user explicitly says to push.** Prefer one solid release over many small ones that burn staff time. When they do say push: update **everywhere** — git (`origin`), GitHub Release (public `.exe`), and the office share (staff Restart & Install). Never ship one place and leave the others behind.
+3. **Do not ship untested builds.** Blank screens, JS errors, and laptop-only failures have shipped before. Smoke-test login, board, proofs, calendar, and updates first.
+4. **Never assume Windows toast = in-app update UI.** Staff need a clear in-app prompt and **Restart & Install** (already built — keep it working).
+5. **Never leave old installers in the updates share root.** Archive previous `.exe`/`.blockmap` into `Old versions\` or updaters break / get confused.
+6. **Never put alert/notification windows behind the Board.** Alerts must stay on top and usable.
+7. **Never ignore dark/light contrast.** Text on both: calendar jobs, logos (need light + dark assets), assigned names, drop zones.
+8. **Never make the window rely on page scrollbars.** UI must scale to the window; grow “drop jobs” areas with content, don’t leave huge empty coloured strips.
+9. **Never treat this as a heavy GPU app.** Staff use laptops without GPUs — keep startup light, avoid loading all proofs at once, watch SQLite/network freezes.
+
+## Product truths we already learned
+
+- App name is **Joblio**; show **build version** in the UI.
+- Field formerly “Client” is **Job Number**; archive/grid shows that value; hide it when empty.
+- Calendar/rigging chips show **job number + name only**.
+- Usernames are **case-insensitive**. Login has **Remember me**.
+- Settings = **gear icon**; don’t clutter the top nav; Installs lives with Rigging.
+- On-hold jobs can exist **without a due date**.
+- Archived jobs must be **restorable** (“Restore to board”) — archive is not permanent.
+- Spell check is English; skip passwords, usernames, and job numbers.
+- Lead time = pick 14 / 28 / 48 days (auto date) — not a separate duplicate due-date field.
+- `Reference Program/` is **learning only** — never copy AGPL code (see `reference-program.mdc`).
+- Polish and stability first; mobile/viewer later.
+
+## When unsure
+
+Ask before large new surfaces. Prefer small, reversible UI diffs. After any stability or update change, wait for an explicit **push** from the user — then publish git, GitHub Releases, and the office share together.

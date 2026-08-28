@@ -450,6 +450,10 @@ const api = {
     ipcRenderer.invoke('settings:getDbPath') as Promise<{ configured: boolean; path: string | null }>,
   setDbPath: (path: string) =>
     ipcRenderer.invoke('settings:setDbPath', path) as Promise<{ ok: boolean } | { error: string }>,
+  useLocalDb: () =>
+    ipcRenderer.invoke('settings:useLocalDb') as Promise<
+      { ok: true; path: string } | { error: string }
+    >,
   pickFolder: () =>
     ipcRenderer.invoke('settings:pickFolder') as Promise<string | null>,
   getShareRoot: () =>

@@ -1,6 +1,6 @@
 {
   "name": "signage-job-tracker",
-  "version": "0.4.22",
+  "version": "0.4.23",
   "private": true,
   "description": "Joblio - Windows desktop app for tracking signage jobs through your company's workflow",
   "author": "Signage Co.",
@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "dist": "python scripts/generate-windows-icon.py && npm run build && electron-builder --win",
     "publish:share": "node scripts/publish-to-share.mjs",
-    "release": "npm run dist && npm run publish:share",
+    "publish:github": "node scripts/publish-github-release.mjs",
+    "release": "npm run dist && npm run publish:share && npm run publish:github",
     "lint": "tsc --noEmit -p electron/tsconfig.json && tsc --noEmit",
     "migrate:selfhost": "node scripts/migrate-sqlite-to-selfhost.mjs"
   },

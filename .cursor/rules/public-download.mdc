@@ -1,0 +1,28 @@
+---
+description: Joblio must work for a stranger who downloads it — no office share required
+alwaysApply: true
+---
+
+# Public download — it has to work
+
+When this repo is public, a stranger must be able to clone or install Joblio and run it **on one PC with no office network, Docker, ngrok, or API key**.
+
+## Default path (public / single PC)
+
+- First-run **Start on this computer** → `jobs.db` under this PC’s app data
+- Proofs live next to that file (`proofs\`)
+- SQLite is the default. Self-host Docker is optional and documented in `self-host/`
+- Auto-update against `\\server\...` must **quietly skip** if that share does not exist
+- Public installers live on **GitHub Releases** (`https://github.com/MitchellPel/Joblio/releases/latest`). Shop PCs still update from the office share. A version bump must hit **both**.
+
+## Team path (office)
+
+- Setup still offers **shared folder** so shop PCs can use one `jobs.db`
+- Do not remove or break that flow
+
+## Do not
+
+- Hardcode office UNC paths, LAN IPs, or ngrok URLs as the only way to start
+- Require `joblio-api-key.txt` for local SQLite
+- Put secrets, `jobs.db`, or `Reference Program/` (AGPL) in git
+- Assume every installer is updated from the office share

@@ -1,0 +1,26 @@
+---
+description: Jobtrack UI conventions — Tailwind tokens, jt-* classes, dark mode, Electron renderer patterns
+globs: src/**/*.{tsx,css}, tailwind.config.js
+alwaysApply: false
+---
+
+# Jobtrack UI
+
+Read `design-systems/jobtrack/DESIGN.md` before visual changes.
+
+## Theming
+
+- Semantic colors only: `canvas`, `card`, `input`, `ink`, `surface`, `brand`, `stage-*`
+- Dark mode via `html.dark` + CSS variables — never duplicate components for light/dark
+- Do not use `bg-white` for themed surfaces; use `bg-card` or `bg-input`
+- Light mode appearance must remain unchanged when editing tokens
+
+## Components
+
+- Prefer `jt-btn-*`, `jt-input`, `jt-card`, `jt-page`, `jt-pill` over raw Tailwind
+- Stage colors from `src/data/stages.ts`
+- Icons from `lucide-react`
+
+## Data access
+
+- Renderer calls `window.tracker.*` only — no direct DB, no HTTP

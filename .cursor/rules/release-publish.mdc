@@ -1,0 +1,57 @@
+---
+description: How to publish Joblio — office share, GitHub source, and GitHub Releases together
+alwaysApply: true
+---
+
+# Release & Publish — update everywhere
+
+When the user says **push** / **release** / **publish**, do **all three**. Never ship the office share and leave GitHub behind, or the other way around.
+
+| Destination | Who it is for | What to update |
+|-------------|----------------|----------------|
+| **Git** (`origin` / GitHub `main`) | Anyone cloning source | Commit + push the version bump and code |
+| **GitHub Releases** | Public / home download (no Node) | Attach `Joblio Setup {version}.exe` |
+| **Office share** `\\server\D\Joblio DB\Jobtracker\updates\` | Shop PCs (**Restart & Install**) | Installer, `.blockmap`, `latest.yml` |
+
+Do not wait for a second reminder. One version number, all destinations.
+
+## Folder layout (office share)
+
+| Location | Contents |
+|----------|----------|
+| `updates\` (root) | **Current** release only: installer, `.blockmap`, `latest.yml` |
+| `updates\Old versions\` | All **previous** installers and blockmaps |
+
+Never leave old `.exe` / `.blockmap` files in the updates root — staff updaters read `latest.yml` from root; old files clutter the folder and cause confusion.
+
+## Publish workflow
+
+1. Bump `version` in `package.json` and add `src/data/changelog.ts`
+2. Commit and **push to GitHub** (`main`)
+3. Run **`npm run release`** (builds + office share + GitHub Release), or:
+   - `npm run dist`
+   - `npm run publish:share`
+   - `npm run publish:github`
+4. `scripts/publish-to-share.mjs` will:
+   - Move any older `Joblio Setup *.exe` and `.blockmap` from updates root → `Old versions\`
+   - Copy the new installer, blockmap, and `latest.yml` to updates root
+5. `scripts/publish-github-release.mjs` creates tag `v{version}` and uploads the Setup `.exe`
+6. Verify:
+   - Share `latest.yml` shows the new version
+   - https://github.com/MitchellPel/Joblio/releases/latest has the same version `.exe`
+
+Keep electron-builder `publish.url` on the **office share**. Do not point `app-update.yml` at GitHub — shop PCs must keep using the share. Home installs skip the share if it is missing.
+
+## Auto-update behaviour (v0.1.15+)
+
+Updates use `electron-updater` with a custom network-share provider (`electron/ipc/shareUpdateProvider.ts`). When staff click **Restart & Install**, the app runs a **silent NSIS update** (`/S --force-run`) — no uninstall wizard, app reopens automatically.
+
+Home / public installs: if `\\server\...` does not exist, skip quietly. They get new versions by downloading the latest GitHub Release.
+
+## Do not
+
+- Publish only the share, or only GitHub
+- Manually copy installers without archiving old ones from the root
+- Delete `latest.yml` or put it in Old versions
+- Change the share path without updating `scripts/publish-to-share.mjs` and `electron/ipc/updaterIpc.ts`
+- Point the packaged updater at GitHub (breaks shop PCs)

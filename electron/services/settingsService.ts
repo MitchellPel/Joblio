@@ -46,6 +46,16 @@ export function setDbPath(dbPath: string): void {
   writeRaw(data);
 }
 
+export function getLocalDbPath(): string {
+  return path.join(getSettingsDir(), 'jobs.db');
+}
+
+export function useLocalDb(): string {
+  const dbPath = getLocalDbPath();
+  setDbPath(dbPath);
+  return dbPath;
+}
+
 export function getShareRoot(): string | null {
   const root = readRaw().shareRoot?.trim();
   return root || null;

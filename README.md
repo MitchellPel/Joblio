@@ -1,13 +1,43 @@
 # Joblio
 
-A Windows desktop application for tracking signage jobs through your company's workflow: **New Job → Design → Production → Install / Collection**.
+Windows desktop app for tracking signage jobs: **New → Design → Production → Install / Collection**.
 
-Built with Electron + React + TypeScript + SQL.js. Not a website — a real Windows desktop app with an installer.
+Electron + React + TypeScript. Not a website. **No office server required** to try it on one PC.
+
+---
+
+## Download and run (Windows)
+
+**Installer (no Node):** [Latest release](https://github.com/MitchellPel/Joblio/releases/latest) — download `Joblio Setup *.exe`, install, then choose **Start on this PC**.
+
+Login: `admin` / `admin123` — change that password after you get in.
+
+Shop PCs keep using the office update share (**Restart & Install**). Home / public copies skip that share if it is not on the PC.
+
+**From source**
+
+```bash
+git clone https://github.com/MitchellPel/Joblio.git
+cd Joblio
+npm install
+npm run dev
+```
+
+On first launch choose **Start on this PC**. Same login as above.
+
+---
+
+## Team (shared folder)
+
+On setup, pick **Use shared folder** and point every PC at the same `jobs.db` on a network share.
+
+Optional office Docker stack (Postgres): see `self-host/README.md`.
 
 ---
 
 ## Features
 
+- **Works on one PC** — Start on this computer; jobs stay local until you choose a shared folder
 - **Kanban Board** — Drag-and-drop jobs between stages (New, Design, Production, Install, Collection, Completed)
 - **Multi-user** — Username/password logins with admin and staff roles
 - **Audit trail** — Every stage change is recorded with who, when, and any notes
@@ -24,14 +54,8 @@ Built with Electron + React + TypeScript + SQL.js. Not a website — a real Wind
 - Node.js 20+ (with npm)
 - Windows 10/11
 
-### Setup
-
 ```bash
-# Install dependencies
-cd signage-job-tracker
 npm install
-
-# Run in development mode (two terminals or use the dev script)
 npm run dev
 ```
 
@@ -183,13 +207,13 @@ The first admin user is created automatically:
 Edit `src/data/stages.ts` to change stage names, order, or colours.
 
 ### Resetting the database
-Delete the `jobs.db` file from the shared folder. The app recreates it on the next launch with a fresh admin account.
+Delete `jobs.db` (and the `proofs` folder next to it). Local installs: `%APPDATA%\signage-job-tracker\`. Shared folder: the path you chose at setup. The app recreates the file on the next launch with a fresh admin account.
 
 ---
 
 ## License
 
-Private — Internal company use.
+All rights reserved unless a license file is added. You can download and run a local copy from [Releases](https://github.com/MitchellPel/Joblio/releases/latest).
 
 ## Self-host server
 

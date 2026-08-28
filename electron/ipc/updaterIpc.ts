@@ -128,8 +128,12 @@ export function registerUpdaterIpc(ipcMain: IpcMain): void {
 
   ipcMain.handle('updater:checkNow', async () => {
     try {
-      configureAutoUpdater();
       const currentVersion = app.getVersion();
+      const shareDir = resolveUpdateDir();
+      if (!shareReachable(shareDir)) {
+        return { ok: true, current: currentVersion, latest: currentVersion };
+      }
+      configureAutoUpdater();
       const result = await autoUpdater.checkForUpdates();
       if (!result) {
         return { ok: true, current: currentVersion, latest: currentVersion };
@@ -171,8 +175,22 @@ export function registerUpdaterIpc(ipcMain: IpcMain): void {
   });
 }
 
+function shareReachable(dir: string): boolean {
+  try {
+    return !!dir && fs.existsSync(dir);
+  } catch {
+    return false;
+  }
+}
+
 export function setupAutoUpdater(): void {
   if (process.env.VITE_DEV_SERVER_URL) return;
+
+  const shareDir = resolveUpdateDir();
+  if (!shareReachable(shareDir)) {
+    console.log('[updater] No update share at', shareDir, '— skipping (local/public install)');
+    return;
+  }
 
   configureAutoUpdater();
 

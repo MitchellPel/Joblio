@@ -21,7 +21,10 @@ Desktop.ini
 
 # Local tooling
 .od-skills/
-.cursor/
+# Cursor local (keep published rules for the team)
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 *.csproj.user
 
 # AGPL AppFlowy reference — learning only, never ship

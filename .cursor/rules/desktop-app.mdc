@@ -1,0 +1,36 @@
+---
+description: This is a Windows Desktop application (Electron), NOT a web app. Never build it as a website, web server, or anything that runs in a browser.
+alwaysApply: true
+---
+
+# Desktop Application (Not a Website)
+
+This project is a **Windows Desktop Application** built with Electron. It is NOT a website, web app, or anything that requires a browser to run.
+
+## Core constraints
+
+- The output is a `.exe` Windows installer (NSIS) via electron-builder
+- Users install it like any normal Windows program (Start Menu, desktop shortcut)
+- It runs fully offline on the local PC — no web server, no hosting, no cloud
+- The user launches it from their desktop or Start Menu, not from a browser URL
+- Every PC runs its own copy of the app, all sharing one SQLite database file over the network
+
+## What NOT to do
+
+- Do NOT suggest or build a web server (Express, Fastify, etc.) as a runtime dependency
+- Do NOT suggest hosting the app on a web domain or cloud platform
+- Do NOT write code that requires a browser to open a URL to use the app
+- Do NOT suggest Progressive Web App (PWA) as a delivery mechanism
+- Do NOT create REST/HTTP APIs for the frontend to consume
+- Do NOT use `create-react-app`, `next dev`, `vite dev`, or any dev-server-only workflow as the delivery mechanism
+
+## All IPC communication must use Electron's `ipcMain.handle` / `ipcRenderer.invoke`
+
+- The React renderer calls `window.tracker.*` methods
+- These are wired through Electron's preload script and `contextBridge`
+- All data access goes through the main process (Node.js side) which talks directly to SQLite via `better-sqlite3`
+
+## Target OS
+
+- Primary: Windows 10/11 (x64)
+- No Linux or macOS support required (unless explicitly requested later)

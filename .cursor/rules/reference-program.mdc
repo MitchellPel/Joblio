@@ -1,0 +1,24 @@
+---
+description: The Reference Program folder (AppFlowy) is for learning only — never copy code from it
+alwaysApply: true
+---
+
+# Reference Program — Learning Only
+
+`Reference Program/` at the workspace root contains the AppFlowy source code (Flutter + Rust). It exists **only** as a design and UX reference for improving Joblio.
+
+## Allowed
+
+- Read it to study UX patterns: motion timing, easing curves, responsive layouts, mobile navigation, bottom sheets, theming, spacing, list-update behaviour
+- Describe those patterns in words and re-implement the *ideas* from scratch in Joblio's own stack (React + TypeScript + Tailwind + Electron)
+
+## Forbidden
+
+- **Never copy, port, translate, or adapt code from `Reference Program/` into Joblio.** AppFlowy is AGPL-licensed; incorporating its code would legally require open-sourcing Joblio
+- Never import, reference, or build against anything inside `Reference Program/`
+- Never include `Reference Program/` in Joblio's build, packaging, search-and-replace refactors, or dependency graphs
+- Do not suggest rewriting Joblio in Flutter/Rust just because the reference uses them
+
+## Rule of thumb
+
+If you can explain the pattern in a sentence and write it fresh in Joblio's stack, it's learning. If you need the reference file open to transcribe from, it's copying — stop.
