@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
 import { isSelfHostMode } from '../db/backendMode';
-import { getShareRoot } from '../services/settingsService';
+import { getSettings, getShareRoot, setShareRoot } from '../services/settingsService';
+import { OFFICE_SHARE_ROOTS, officePathExists } from '../utils/officeShare';
 
 type Env = {
   /** Active base URL (LAN or tunnel) — flipped silently. */
@@ -39,16 +40,54 @@ function configuredShareRoot(): string | null {
   }
 }
 
-function readShareApiKey(): string {
-  const root = configuredShareRoot();
-  if (!root) return '';
-  const p = path.join(root, API_KEY_FILE);
+function keyPath(root: string): string {
+  return path.join(root.replace(/[\\/]+$/, ''), API_KEY_FILE);
+}
+
+function shareHasKey(root: string): boolean {
+  return officePathExists(keyPath(root));
+}
+
+/** Share folders that actually have joblio-api-key.txt (settings, jobs.db folder, office probes). */
+function listShareRoots(): string[] {
+  const out: string[] = [];
+  const push = (root: string | null | undefined) => {
+    if (!root) return;
+    const n = root.replace(/[\\/]+$/, '');
+    if (n && !out.includes(n)) out.push(n);
+  };
+  push(configuredShareRoot());
   try {
-    if (!fs.existsSync(p)) return '';
-    return fs.readFileSync(p, 'utf8').trim();
+    const dbPath = getSettings().path;
+    if (dbPath) push(path.dirname(dbPath));
   } catch {
-    return '';
+    // ignore
   }
+  for (const c of OFFICE_SHARE_ROOTS) {
+    if (shareHasKey(c)) push(c);
+  }
+  return out;
+}
+
+function readShareApiKey(): string {
+  for (const root of listShareRoots()) {
+    if (!shareHasKey(root)) continue;
+    try {
+      const k = fs.readFileSync(keyPath(root), 'utf8').trim();
+      if (!k) continue;
+      if (!configuredShareRoot()) {
+        try {
+          setShareRoot(root);
+        } catch {
+          // still use the key this session
+        }
+      }
+      return k;
+    } catch {
+      // try next
+    }
+  }
+  return '';
 }
 
 /** Drop cached env so a newly chosen share path is picked up immediately. */
@@ -83,9 +122,7 @@ function writeCachedTunnelUrl(tunnelUrl: string): void {
 function readShareEndpointUrl(): string {
   const paths = [
     process.env.JOBLIO_ENDPOINT_JSON,
-    configuredShareRoot()
-      ? path.join(configuredShareRoot()!, 'joblio-endpoint.json')
-      : '',
+    ...listShareRoots().map((root) => path.join(root, 'joblio-endpoint.json')),
   ].filter(Boolean) as string[];
   for (const p of paths) {
     try {
@@ -152,7 +189,7 @@ export function getSelfHostEnv(): Env {
     fileEnv.SUPABASE_SECRET_KEY ||
     readShareApiKey();
 
-  const shareRoot = configuredShareRoot();
+  const shareRoot = listShareRoots()[0] || configuredShareRoot();
   const proofsDir =
     process.env.JOBLIO_PROOFS_DIR ||
     fileEnv.JOBLIO_PROOFS_DIR ||
@@ -216,9 +253,7 @@ async function resolveTunnelUrl(env: Env): Promise<string | null> {
   // LAN file may list the current ngrok URL (office PCs)
   const sharePaths = [
     process.env.JOBLIO_ENDPOINT_JSON,
-    configuredShareRoot()
-      ? path.join(configuredShareRoot()!, 'joblio-endpoint.json')
-      : '',
+    ...listShareRoots().map((root) => path.join(root, 'joblio-endpoint.json')),
   ].filter(Boolean) as string[];
 
   for (const p of sharePaths) {

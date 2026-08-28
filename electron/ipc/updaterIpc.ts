@@ -6,9 +6,10 @@ import { autoUpdater, NsisUpdater } from 'electron-updater';
 import type { ProgressInfo, UpdateInfo } from 'builder-util-runtime';
 import { fileUrlToWindowsPath, FsShareHttpExecutor } from './fsShareHttpExecutor.js';
 import { ShareUpdateProvider } from './shareUpdateProvider.js';
+import { OFFICE_UPDATES_DIR } from '../utils/officeShare.js';
 
 /** Hardcoded network share for updates (also read from app-update.yml when present). */
-const DEFAULT_UPDATE_DIR = '\\\\server\\D\\Joblio DB\\Jobtracker\\updates';
+const DEFAULT_UPDATE_DIR = OFFICE_UPDATES_DIR;
 
 let mainWindow: BrowserWindow | null = null;
 let shareExecutor: FsShareHttpExecutor | null = null;

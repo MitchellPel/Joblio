@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getDbPath } from '../db/connection';
 import { getShareRoot, getSettings } from '../services/settingsService';
+import { officeChild } from './officeShare';
 
 const FOLDER = 'quote-sizes';
 
@@ -32,6 +33,7 @@ export function listQuoteSizeDirs(): string[] {
   } catch {
     // ignore
   }
+  for (const d of officeChild(FOLDER)) pushDir(out, d);
   return out;
 }
 

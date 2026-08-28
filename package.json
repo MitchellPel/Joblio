@@ -1,6 +1,6 @@
 {
   "name": "signage-job-tracker",
-  "version": "0.4.24",
+  "version": "0.4.25",
   "private": true,
   "license": "Apache-2.0",
   "description": "Windows desktop job tracker for sign shops. Electron + React. One PC, no server.",
@@ -18,7 +18,7 @@
     "publish:share": "node scripts/publish-to-share.mjs",
     "publish:github": "node scripts/publish-github-release.mjs",
     "release": "npm run dist && npm run publish:share && npm run publish:github",
-    "lint": "tsc --noEmit -p electron/tsconfig.json && tsc --noEmit",
+    "lint": "tsc --noEmit -p electron/tsconfig.json && tsc --noEmit && node scripts/check-office-fallbacks.mjs",
     "migrate:selfhost": "node scripts/migrate-sqlite-to-selfhost.mjs"
   },
   "build": {

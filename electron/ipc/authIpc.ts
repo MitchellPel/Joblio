@@ -25,8 +25,12 @@ export function registerAuthIpc(ipcMain: IpcMain): void {
     if (isSelfHostMode()) {
       try {
         await refreshUserCache();
-      } catch (err: any) {
-        return { error: `Docker database not reachable: ${err?.message || err}` };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (/api key missing/i.test(msg) || /joblio-api-key/i.test(msg)) {
+          return { error: msg };
+        }
+        return { error: `Docker database not reachable: ${msg}` };
       }
     } else if (!(await whenDbReady())) {
       return { error: 'Still connecting to the shared database. Please try again.' };

@@ -11,13 +11,13 @@ Raw archive: `cursor_chat_program_update_notification.json` (read only when digg
 
 1. **Do not redesign the whole UI** when adding one feature (dark mode once rewrote the layout — had to revert). Change only what was asked.
 2. **Do not push updates unless the user explicitly says to push.** Prefer one solid release over many small ones that burn staff time. When they do say push: update **everywhere** — git (`origin`), GitHub Release (public `.exe`), and the office share (staff Restart & Install). Never ship one place and leave the others behind.
-3. **Do not ship untested builds.** Blank screens, JS errors, and laptop-only failures have shipped before. Smoke-test login, board, proofs, calendar, and updates first.
+3. **Do not ship untested builds.** Blank screens, JS errors, and laptop-only failures have shipped before. Smoke-test login (including self-host / share API key), board, proofs, calendar, and updates first.
 4. **Never assume Windows toast = in-app update UI.** Staff need a clear in-app prompt and **Restart & Install** (already built — keep it working).
 5. **Never leave old installers in the updates share root.** Archive previous `.exe`/`.blockmap` into `Old versions\` or updaters break / get confused.
 6. **Never put alert/notification windows behind the Board.** Alerts must stay on top and usable.
 7. **Never ignore dark/light contrast.** Text on both: calendar jobs, logos (need light + dark assets), assigned names, drop zones.
 8. **Never make the window rely on page scrollbars.** UI must scale to the window; grow “drop jobs” areas with content, don’t leave huge empty coloured strips.
-9. **Never treat this as a heavy GPU app.** Staff use laptops without GPUs — keep startup light, avoid loading all proofs at once, watch SQLite/network freezes.
+10. **Never remove office share probes to make GitHub downloads work.** 0.4.24 did that and self-host login died (`joblio-api-key.txt` not found). Probe if `\\server\...` exists; skip if it does not. Do not make shop PCs re-do Setup after an update. See `shop-compat.mdc` and `electron/utils/officeShare.ts`.
 
 ## Product truths we already learned
 

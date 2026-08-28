@@ -13,8 +13,9 @@ When this repo is public, a stranger must be able to clone or install Joblio and
 - Proofs live next to that file (`proofs\`)
 - SQLite is the default. Self-host Docker is optional and documented in `self-host/`
 - Auto-update against `\\server\...` must **quietly skip** if that share does not exist
+- Shop PCs that **can** see `\\server\...` must still find `joblio-api-key.txt`, proofs, and updates **without** re-running Setup (see `shop-compat.mdc`)
 - Public installers live on **GitHub Releases** (`https://github.com/MitchellPel/Joblio/releases/latest`). Shop PCs still update from the office share. A version bump must hit **both**.
-- Self-host LAN / ngrok URLs and AI keys live in env or Settings — never bake office IPs or tunnel hostnames into source
+- Self-host LAN / ngrok URLs and AI keys live in env, Settings, or a **reachable** share file — never bake a live tunnel hostname as the only URL. Keep office UNC **probes** in `electron/utils/officeShare.ts`
 
 ## Team path (office)
 

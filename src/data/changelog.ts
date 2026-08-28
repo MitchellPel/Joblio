@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.25',
+    date: '2026-08-28',
+    highlights: [
+      'Self-host login finds the office API key on the share again — you should not need to pick the folder after an update',
+    ],
+  },
+  {
     version: '0.4.24',
     date: '2026-08-28',
     highlights: [

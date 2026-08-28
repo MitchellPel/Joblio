@@ -173,7 +173,7 @@ export default function Login() {
             {showLocateShare && (
               <div className="rounded-xl border border-ink-10 bg-surface px-3 py-3">
                 <p className="text-xs text-ink-55">
-                  Choose the Joblio share folder that contains{' '}
+                  Joblio needs the shop share that contains{' '}
                   <span className="font-mono text-ink">joblio-api-key.txt</span>
                   {shareHint ? (
                     <>
@@ -181,14 +181,17 @@ export default function Login() {
                       Current: <span className="break-all font-mono text-[11px] text-ink">{shareHint}</span>
                     </>
                   ) : (
-                    '.'
+                    <>
+                      {' '}
+                      (usually <span className="font-mono text-ink">\\server\D\Joblio DB\Jobtracker</span>).
+                    </>
                   )}
                 </p>
                 <button
                   type="button"
                   onClick={handlePickShareRoot}
                   disabled={pickingShare || busy}
-                  className="jt-btn-ghost mt-2 w-full !justify-center disabled:opacity-50"
+                  className="jt-btn-accent mt-2 w-full !justify-center disabled:opacity-50"
                 >
                   <FolderOpen className="h-4 w-4" />
                   {pickingShare ? 'Opening…' : 'Locate share folder'}

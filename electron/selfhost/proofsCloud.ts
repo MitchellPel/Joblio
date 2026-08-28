@@ -9,11 +9,7 @@ import {
 } from '../repositories/proofsRepo';
 import { findUserByIdCloudCached, ensureUserCache } from './usersCloud';
 import { sbFetch, sbJson, getSelfHostEnv } from './rest';
-
-const SHARE_PROOFS_DIRS = [
-  '\\\\server\\D\\Joblio DB\\Jobtracker\\proofs',
-  '\\\\server\\Gary\\Job Tracker\\proofs',
-];
+import { officeChild } from '../utils/officeShare';
 
 function mapMeta(row: any): JobProof {
   return {
@@ -48,7 +44,7 @@ function listProofsDirs(): string[] {
   } catch {
     // ignore
   }
-  for (const d of SHARE_PROOFS_DIRS) push(d);
+  for (const d of officeChild('proofs')) push(d);
   return out;
 }
 

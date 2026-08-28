@@ -1,0 +1,31 @@
+---
+description: Shop PCs must keep working when we make Joblio public-safe
+alwaysApply: true
+---
+
+# Shop compatibility — public-safe must not break the office
+
+0.4.24 taught us: removing hardcoded office paths so GitHub downloads work **broke shop login** (API key file no longer found). That must not happen again.
+
+## The rule
+
+Office UNC / LAN / ngrok are **probes**, not requirements.
+
+- If `\\server\D\Joblio DB\Jobtracker` (or the old Gary share) **exists on this PC**, keep using it for API key, endpoint, proofs, quote sizes, and updates — **no extra Settings click after an update**.
+- If those paths **do not exist** (home, public download), skip quietly and use Start on this PC / local SQLite.
+
+Never delete the probe list in `electron/utils/officeShare.ts` to “clean up” public builds. `npm run lint` checks it is still there.
+
+## Do not
+
+- Require staff to re-pick the share, API key folder, or database path after an update that used to just work
+- Make self-host login depend only on `settings.json` shareRoot if the office share is sitting on the network
+- Bake a live ngrok hostname or LAN IP as the **only** API URL (env / share `joblio-endpoint.json` / probe)
+- Ship a self-host / settings / rest.ts / updater change without mentally walking **shop login** (self-host + share key) and **home Start on this PC**
+
+## Smoke before publish
+
+After touching `electron/selfhost/`, `settingsService`, `backendMode`, updater, or proofs:
+
+1. Office: self-host login still works with no new folder picker
+2. Home-shaped: no office share → no error toast, Start on this PC still works
