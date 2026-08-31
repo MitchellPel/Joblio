@@ -7,6 +7,7 @@ import { checkOrders } from '../services/orderNotifier';
 import { checkFeedback } from '../services/feedbackNotifier';
 import { checkQuoteSizes } from '../services/quoteSizeNotifier';
 import { refreshUserCache } from '../selfhost/usersCloud';
+import { describeSelfHostFetchError } from '../selfhost/rest';
 
 export function registerAuthIpc(ipcMain: IpcMain): void {
   ipcMain.handle('auth:backendMode', async () => ({
@@ -30,7 +31,7 @@ export function registerAuthIpc(ipcMain: IpcMain): void {
         if (/api key missing/i.test(msg) || /joblio-api-key/i.test(msg)) {
           return { error: msg };
         }
-        return { error: `Docker database not reachable: ${msg}` };
+        return { error: describeSelfHostFetchError(err) };
       }
     } else if (!(await whenDbReady())) {
       return { error: 'Still connecting to the shared database. Please try again.' };

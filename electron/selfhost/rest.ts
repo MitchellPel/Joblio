@@ -3,7 +3,7 @@ import path from 'node:path';
 import { app } from 'electron';
 import { isSelfHostMode } from '../db/backendMode';
 import { getSettings, getShareRoot, setShareRoot } from '../services/settingsService';
-import { OFFICE_SHARE_ROOTS, officePathExists } from '../utils/officeShare';
+import { OFFICE_SHARE_ROOTS, OFFICE_LAN_API_PROBES, officePathExists } from '../utils/officeShare';
 
 type Env = {
   /** Active base URL (LAN or tunnel) — flipped silently. */
@@ -119,7 +119,13 @@ function writeCachedTunnelUrl(tunnelUrl: string): void {
   }
 }
 
-function readShareEndpointUrl(): string {
+function isPrivateLanUrl(u: string): boolean {
+  return /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\./.test(u);
+}
+
+function readShareEndpointMeta(): { apiUrl: string; lanUrl: string } {
+  let apiUrl = '';
+  let lanUrl = '';
   const paths = [
     process.env.JOBLIO_ENDPOINT_JSON,
     ...listShareRoots().map((root) => path.join(root, 'joblio-endpoint.json')),
@@ -127,13 +133,22 @@ function readShareEndpointUrl(): string {
   for (const p of paths) {
     try {
       if (!fs.existsSync(p)) continue;
-      const data = JSON.parse(fs.readFileSync(p, 'utf8')) as { api_url?: string; ok?: boolean };
-      if (data?.api_url && data.ok !== false) return stripSlash(data.api_url);
+      const data = JSON.parse(fs.readFileSync(p, 'utf8')) as {
+        api_url?: string;
+        lan_url?: string;
+        ok?: boolean;
+      };
+      if (data?.ok === false) continue;
+      if (!apiUrl && data?.api_url) apiUrl = stripSlash(data.api_url);
+      if (!lanUrl && data?.lan_url) lanUrl = stripSlash(data.lan_url);
+      else if (!lanUrl && data?.api_url && isPrivateLanUrl(data.api_url)) {
+        lanUrl = stripSlash(data.api_url);
+      }
     } catch {
       // continue
     }
   }
-  return '';
+  return { apiUrl, lanUrl };
 }
 
 function loadFileEnv(): Record<string, string> {
@@ -162,6 +177,24 @@ function stripSlash(u: string): string {
   return u.replace(/\/$/, '');
 }
 
+function officeLanProbeUrl(): string {
+  return stripSlash(OFFICE_LAN_API_PROBES[0] || '');
+}
+
+/** Staff-facing text when Docker / ngrok / LAN cannot be reached. */
+export function describeSelfHostFetchError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (
+    /fetch failed|Failed to fetch|network|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNRESET|abort|AbortError|certificate|gateway 50/i.test(
+      msg
+    ) ||
+    (err instanceof TypeError && /fetch/i.test(msg))
+  ) {
+    return 'Can’t reach the Joblio server. On the shop network, check the server PC is on. Away from the shop, the tunnel may be down.';
+  }
+  return msg || 'Can’t reach the Joblio server.';
+}
+
 /** Resolve LAN / tunnel / key for packaged + dev builds. */
 export function getSelfHostEnv(): Env {
   if (cached) return cached;
@@ -170,14 +203,22 @@ export function getSelfHostEnv(): Env {
   }
 
   const fileEnv = loadFileEnv();
-  const lanUrl = stripSlash(process.env.JOBLIO_LAN_API_URL || fileEnv.JOBLIO_LAN_API_URL || '');
+  const shareEp = readShareEndpointMeta();
+  const lanUrl = stripSlash(
+    process.env.JOBLIO_LAN_API_URL ||
+      fileEnv.JOBLIO_LAN_API_URL ||
+      shareEp.lanUrl ||
+      officeLanProbeUrl() ||
+      ''
+  );
 
   const bootstrapUrl = stripSlash(
     process.env.JOBLIO_BOOTSTRAP_URL ||
       fileEnv.JOBLIO_BOOTSTRAP_URL ||
       process.env.JOBLIO_API_URL ||
       fileEnv.JOBLIO_API_URL ||
-      readShareEndpointUrl() ||
+      (shareEp.apiUrl && !isPrivateLanUrl(shareEp.apiUrl) ? shareEp.apiUrl : '') ||
+      shareEp.apiUrl ||
       readCachedTunnelUrl() ||
       ''
   );
@@ -264,7 +305,9 @@ async function resolveTunnelUrl(env: Env): Promise<string | null> {
         ok?: boolean;
       };
       if (data?.api_url && data.ok !== false) {
-        return stripSlash(data.api_url);
+        const url = stripSlash(data.api_url);
+        // Share file often lists LAN; tunnel discovery needs the public URL
+        if (!isPrivateLanUrl(url)) return url;
       }
     } catch {
       // continue
@@ -303,9 +346,12 @@ export async function refreshSelfHostApiUrl(): Promise<string> {
     const env = getSelfHostEnv();
 
     // 1) Office LAN — short timeout so away users aren't delayed
-    if (env.lanUrl && (await probeHealth(env.lanUrl, 900))) {
-      setApiUrl(env.lanUrl);
-      return getSelfHostEnv().url;
+    const lanCandidates = [...new Set([env.lanUrl, ...OFFICE_LAN_API_PROBES.map((u) => stripSlash(u))].filter(Boolean))];
+    for (const lan of lanCandidates) {
+      if (await probeHealth(lan, 900)) {
+        setApiUrl(lan);
+        return getSelfHostEnv().url;
+      }
     }
 
     // 2) Tunnel (ngrok) — discover live URL, then confirm health
@@ -363,11 +409,19 @@ export async function sbFetch(
   const pathPart = pathname.replace(/^\//, '');
   const headers = buildHeaders(init, env.apiKey);
 
-  const tryUrl = async (base: string) =>
-    fetch(`${stripSlash(base)}/rest/v1/${pathPart}${q}`, {
-      ...init,
-      headers,
-    });
+  const tryUrl = async (base: string) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      return await fetch(`${stripSlash(base)}/rest/v1/${pathPart}${q}`, {
+        ...init,
+        headers,
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(t);
+    }
+  };
 
   try {
     const res = await tryUrl(env.url);
@@ -376,11 +430,18 @@ export async function sbFetch(
       throw new Error(`gateway ${res.status}`);
     }
     return res;
-  } catch {
-    // Silent failover to the other path
-    await refreshSelfHostApiUrl();
-    const next = getSelfHostEnv();
-    return tryUrl(next.url);
+  } catch (first) {
+    try {
+      await refreshSelfHostApiUrl();
+      const next = getSelfHostEnv();
+      const res = await tryUrl(next.url);
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        throw new Error(`gateway ${res.status}`);
+      }
+      return res;
+    } catch {
+      throw new Error(describeSelfHostFetchError(first));
+    }
   }
 }
 

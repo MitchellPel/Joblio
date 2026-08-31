@@ -43,6 +43,8 @@ const proofUploadQueue = createAsyncQueue(1);
 
 interface JobDetailProps {
   jobId: number;
+  /** Board already has this row — show it immediately instead of a blank spinner. */
+  initialJob?: Job | null;
   onClose: () => void;
   onUpdated?: (job: Job) => void;
 }
@@ -115,11 +117,13 @@ function ProofThumb({
   );
 }
 
-export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps) {
+export default function JobDetail({ jobId, initialJob, onClose, onUpdated }: JobDetailProps) {
   const { token, user } = useAuth();
   const canArchive = userCanArchiveJobs(user);
   const canDeleteNotes = userCanDeleteNotes(user);
-  const [job, setJob] = useState<Job | null>(null);
+  const [job, setJob] = useState<Job | null>(() =>
+    initialJob && initialJob.id === jobId ? initialJob : null
+  );
   const [history, setHistory] = useState<StageHistoryEntry[]>([]);
   const [notes, setNotes] = useState<JobNote[]>([]);
   const [newNote, setNewNote] = useState('');
@@ -127,7 +131,8 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingNoteBody, setEditingNoteBody] = useState('');
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<JobNote | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(initialJob && initialJob.id === jobId));
+  const [sideLoading, setSideLoading] = useState(true);
   const [error, setError] = useState('');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -193,10 +198,11 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
     if (!token) return;
     try {
       if (!silent) setLoading(true);
-      const [jobData, stageData, notesData] = await Promise.all([
+      const [jobData, stageData, notesData, proofData] = await Promise.all([
         window.tracker.getJob(token, jobId),
         window.tracker.getStageHistory(token, jobId),
         window.tracker.listNotes(token, jobId),
+        window.tracker.listProofs(token, jobId),
       ]);
       if (jobData && !('error' in jobData)) {
         setJob(jobData as Job);
@@ -205,7 +211,6 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
       if (!('error' in stageData)) setHistory(stageData as StageHistoryEntry[]);
       if (!('error' in notesData)) setNotes(notesData as JobNote[]);
       else setNotes([]);
-      const proofData = await window.tracker.listProofs(token, jobId);
       if (!('error' in proofData)) setProofs(proofData as JobProof[]);
       else setProofs([]);
       setExternalChange(false);
@@ -213,11 +218,22 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
       setError(err.message || 'Failed to load job');
     } finally {
       if (!silent) setLoading(false);
+      setSideLoading(false);
     }
   }, [token, jobId]);
 
   useEffect(() => {
-    if (token && jobId) loadData();
+    setNotes([]);
+    setProofs([]);
+    setHistory([]);
+    setSideLoading(true);
+  }, [jobId]);
+
+  useEffect(() => {
+    if (!token || !jobId) return;
+    loadData(Boolean(initialJob && initialJob.id === jobId));
+    // initialJob is only a first-paint seed; do not refetch when the board later updates it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, jobId, loadData]);
 
   // Keep notes chat scrolled to the latest message when the thread loads
@@ -352,12 +368,15 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
     const next = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
+    const previous = job;
+    setJob({ ...job, designer_status: next });
     const result = await window.tracker.updateJob(token, {
       id: jobId,
       version: job.version,
       designer_status: next,
     });
     if ('error' in result) {
+      setJob(previous);
       setError(result.error);
       loadData();
       return;
@@ -469,7 +488,7 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
     job?.assigned_to === user.id
   );
 
-  if (loading) {
+  if (loading && !job) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-ink-10 border-t-brand" />
@@ -858,7 +877,11 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
                 <div className="mb-3 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{proofError}</div>
               )}
 
-              {proofs.length === 0 ? (
+              {sideLoading ? (
+                <div className="flex items-center justify-center rounded-xl border border-dashed border-ink-10 py-8">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-ink-10 border-t-brand" />
+                </div>
+              ) : proofs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-ink-10 py-8 text-ink-40">
                   <FileText className="h-5 w-5 opacity-60" />
                   <p className="text-sm">No proofs yet</p>
@@ -949,7 +972,11 @@ export default function JobDetail({ jobId, onClose, onUpdated }: JobDetailProps)
             ref={notesScrollRef}
             className="jt-scroll min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3"
           >
-            {notes.length === 0 ? (
+            {sideLoading ? (
+              <div className="flex h-full min-h-[120px] items-center justify-center">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-ink-10 border-t-brand" />
+              </div>
+            ) : notes.length === 0 ? (
               <div className="flex h-full min-h-[120px] flex-col items-center justify-center gap-1 px-4 text-center">
                 <p className="text-sm text-ink-40">No notes yet</p>
                 <p className="text-xs text-ink-40">Type below to start the conversation</p>

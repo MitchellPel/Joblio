@@ -446,6 +446,7 @@ export default function Board() {
             <div className="flex min-h-0 flex-1 flex-col">
               <JobDetail
                 jobId={selectedJob.id}
+                initialJob={selectedJob}
                 onClose={() => {
                   setDetailOpen(false);
                   loadMentionBadges();

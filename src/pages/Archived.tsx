@@ -264,6 +264,7 @@ export default function Archived() {
             <div className="flex min-h-0 flex-1 flex-col">
               <JobDetail
                 jobId={selectedJob.id}
+                initialJob={selectedJob}
                 onClose={() => setSelectedJob(null)}
                 onUpdated={(updated) => {
                   if (updated.archived_at) {

@@ -57,7 +57,7 @@ function KanbanColumn({
                     key={job.id}
                     job={job}
                     index={index}
-                    onClick={() => onJobClick(job)}
+                    onJobClick={onJobClick}
                     dragDisabled={isDragDisabled(job)}
                     mentionedForMe={mentionedJobIds?.has(job.id)}
                     selectMode={selectMode}

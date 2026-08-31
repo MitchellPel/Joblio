@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.26',
+    date: '2026-08-31',
+    highlights: [
+      'Opening a job from the board shows the details straight away instead of waiting on a spinner',
+      'Ticking jobs in Select mode is snappier',
+      'Shop PCs find the office server on the LAN again after a wipe — you should not need a tunnel on the shop network',
+      'If the office server is down, Joblio says so in plain English instead of a fetch error',
+    ],
+  },
+  {
     version: '0.4.25',
     date: '2026-08-28',
     highlights: [

@@ -43,6 +43,7 @@ import {
   syncJobDueDateToRiggingCloud,
 } from '../selfhost/riggingCloud';
 import { parseDesignerStatuses, serializeDesignerStatuses } from '../utils/designerStatus';
+import { describeSelfHostFetchError } from '../selfhost/rest';
 import { listRecentActivity } from '../repositories/activityRepo';
 import { listRecentActivityCloud } from '../selfhost/activityCloud';
 import { addMentionsCloud } from '../selfhost/mentionsCloud';
@@ -82,7 +83,13 @@ export function registerJobsIpc(ipcMain: IpcMain): void {
   ipcMain.handle('jobs:list', async (_event, token: string) => {
     const auth = await requireAuth(token);
     if ('error' in auth) return { error: auth.error };
-    if (isSelfHostMode()) return listJobsCloud();
+    if (isSelfHostMode()) {
+      try {
+        return await listJobsCloud();
+      } catch (err) {
+        return { error: describeSelfHostFetchError(err) };
+      }
+    }
     return listJobs();
   });
 

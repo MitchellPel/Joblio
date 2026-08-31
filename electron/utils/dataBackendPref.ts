@@ -2,6 +2,7 @@ import type { DataBackend } from '../db/backendMode';
 import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { reachableOfficeShareRoots, officePathExists } from './officeShare';
 
 const FILE = 'data-backend.json';
 
@@ -9,7 +10,18 @@ function filePath(): string {
   return path.join(app.getPath('userData'), FILE);
 }
 
-/** Persisted preference (Settings). Default selfhost = Docker cutover. */
+function officeShareLooksLikeSelfHost(): boolean {
+  try {
+    for (const root of reachableOfficeShareRoots()) {
+      if (officePathExists(path.join(root, 'joblio-api-key.txt'))) return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+/** Persisted preference (Settings). No file = first run / wiped PC. */
 export function getStoredDataBackend(): DataBackend {
   try {
     const raw = JSON.parse(fs.readFileSync(filePath(), 'utf-8')) as { backend?: string };
@@ -18,8 +30,8 @@ export function getStoredDataBackend(): DataBackend {
   } catch {
     // first run — no file yet
   }
-  // New installs + PCs with no preference: Docker self-host
-  return 'selfhost';
+  // Shop PC that can see the share key → Docker. Home / public → SQLite.
+  return officeShareLooksLikeSelfHost() ? 'selfhost' : 'sqlite';
 }
 
 export function setStoredDataBackend(backend: DataBackend): void {

@@ -32,6 +32,14 @@ const checks = [
     msg: 'electron/selfhost/rest.ts must probe office shares for joblio-api-key.txt',
   },
   {
+    ok: officeShare.includes('192.168.1.107') && officeShare.includes('OFFICE_LAN_API_PROBES'),
+    msg: 'electron/utils/officeShare.ts must probe the office LAN API (192.168.1.107)',
+  },
+  {
+    ok: rest.includes('OFFICE_LAN_API_PROBES'),
+    msg: 'electron/selfhost/rest.ts must probe office LAN API URLs',
+  },
+  {
     ok: updater.includes('OFFICE_UPDATES_DIR') && updater.includes('shareReachable'),
     msg: 'electron/ipc/updaterIpc.ts must skip the update share when it is not on this PC',
   },
