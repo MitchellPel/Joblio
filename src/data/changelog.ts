@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.27',
+    date: '2026-09-02',
+    highlights: [
+      'Shop PCs that had fallen onto an empty jobs file switch back to the shop server so login shows real jobs again',
+      'Windows notifications show the Joblio name and icon instead of Electron',
+      'Activity is listed per person, with Everyone still available',
+      'Settings is simpler: look, this PC, where jobs are stored, then AI and feedback',
+      'Dark mode covers update buttons, error screens, and the window chrome so those no longer stay light',
+    ],
+  },
+  {
     version: '0.4.26',
     date: '2026-08-31',
     highlights: [

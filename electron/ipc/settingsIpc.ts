@@ -239,6 +239,7 @@ export function registerSettingsIpc(ipcMain: Electron.IpcMain): void {
             };
       try {
         win.setTitleBarOverlay(next);
+        win.setBackgroundColor(next.color);
         return { ok: true };
       } catch {
         return { ok: false };

@@ -45,6 +45,7 @@
 
   color: rgb(var(--color-ink));
   background: rgb(var(--color-canvas));
+  color-scheme: light;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -95,6 +96,11 @@
 
   --scrollbar-thumb: rgba(235, 233, 226, 0.18);
   --scrollbar-thumb-hover: rgba(235, 233, 226, 0.32);
+  color-scheme: dark;
+}
+
+.jt-page details summary::-webkit-details-marker {
+  display: none;
 }
 
 html,

@@ -1,10 +1,44 @@
-import { useState, useEffect } from 'react';
-import { FolderOpen, Save, HardDrive, RefreshCw, Download, RotateCcw, Sun, Moon, Palette, Sparkles, Monitor, Cloud, Bot } from 'lucide-react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { FolderOpen, Save, HardDrive, RefreshCw, Download, RotateCcw, Sun, Moon, Sparkles, Monitor, Cloud, Bot } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import WhatsNew from '../components/WhatsNew';
 import FeedbackPanel from '../components/FeedbackPanel';
 import BoardColorPicker from '../components/BoardColorPicker';
+
+type JobsSource = 'shop' | 'folder' | 'local';
+
+function inferJobsSource(backend: 'sqlite' | 'selfhost', dbPath: string): JobsSource {
+  if (backend === 'selfhost') return 'shop';
+  const n = dbPath.replace(/\//g, '\\').toLowerCase();
+  if (n.includes('\\signage-job-tracker\\jobs.db')) return 'local';
+  return 'folder';
+}
+
+function SegBtn({
+  active,
+  disabled,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all disabled:opacity-40 ${
+        active ? 'bg-card text-ink shadow-ring' : 'text-ink-55 hover:text-ink'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function Settings() {
   const { theme, setTheme, glass, setGlass } = useTheme();
@@ -116,25 +150,31 @@ export default function Settings() {
   }
 
   async function handleUseThisPc() {
-    if (dataBackend === 'selfhost') {
-      setMessage({ type: 'error', text: 'Database path is not used in Self-host mode.' });
-      return;
-    }
     setSaving(true);
     setMessage(null);
+    if (dataBackend === 'selfhost') {
+      const switched = await window.tracker.setDataBackend('sqlite');
+      if ('error' in switched) {
+        setMessage({ type: 'error', text: switched.error });
+        setSaving(false);
+        return;
+      }
+      setDataBackendState(switched.backend);
+      setDataBackendNeedsRestart(!!switched.needsRestart);
+    }
     const result = await window.tracker.useLocalDb();
     if ('error' in result) {
       setMessage({ type: 'error', text: result.error });
     } else {
       setDbPath(result.path);
-      setMessage({ type: 'success', text: 'Jobs will stay on this PC.' });
+      setMessage({ type: 'success', text: 'Jobs will stay on this PC. Restart Joblio if you just left the shop server.' });
     }
     setSaving(false);
   }
 
   async function handleSave() {
     if (dataBackend === 'selfhost') {
-      setMessage({ type: 'error', text: 'Database path is not used in Self-host mode.' });
+      setMessage({ type: 'error', text: 'Shop server does not use a folder path.' });
       return;
     }
     if (!dbPath.trim()) {
@@ -147,7 +187,7 @@ export default function Settings() {
     if ('error' in result) {
       setMessage({ type: 'error', text: result.error });
     } else {
-      setMessage({ type: 'success', text: 'Database path updated successfully.' });
+      setMessage({ type: 'success', text: 'Folder saved.' });
     }
     setSaving(false);
   }
@@ -205,8 +245,8 @@ export default function Settings() {
       type: 'success',
       text:
         backend === 'selfhost'
-          ? 'Self-host (Docker) selected — restart Joblio to apply. Staff share stays untouched until others switch too.'
-          : 'Office share (SQLite) selected — restart Joblio to apply.',
+          ? 'Jobs will load from the shop server. Restart Joblio to apply.'
+          : 'Jobs will use a file on this PC or a shared folder. Restart Joblio to apply.',
     });
   }
 
@@ -260,6 +300,23 @@ export default function Settings() {
     await window.tracker.installNow();
   }
 
+  const jobsSource = useMemo(() => inferJobsSource(dataBackend, dbPath), [dataBackend, dbPath]);
+
+  async function handleJobsSource(source: JobsSource) {
+    if (dataBackendLocked) return;
+    if (source === 'shop') {
+      await handleDataBackend('selfhost');
+      return;
+    }
+    if (source === 'local') {
+      await handleUseThisPc();
+      return;
+    }
+    if (dataBackend === 'selfhost') {
+      await handleDataBackend('sqlite');
+    }
+  }
+
   return (
     <div className="jt-page flex flex-col overflow-hidden p-6">
       <div className="jt-scroll mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto">
@@ -269,82 +326,211 @@ export default function Settings() {
         {loading ? (
           <p className="text-ink-40">Loading settings…</p>
         ) : (
-          <div className="space-y-6">
-            <FeedbackPanel />
+          <div className="space-y-5 pb-8">
+            {message && (
+              <div
+                className={`rounded-xl px-4 py-3 text-sm ${
+                  message.type === 'success'
+                    ? 'border border-success/20 bg-success/10 text-success'
+                    : 'border border-danger/20 bg-danger/10 text-danger'
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
 
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Cloud className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Data mode</h2>
+            <section className="jt-card p-5">
+              <p className="jt-eyebrow mb-1">You</p>
+              <h2 className="mb-1 text-base font-medium text-ink">Look &amp; colour</h2>
+              <p className="mb-4 text-sm text-ink-55">Saved on this PC. Your name colour shows on job cards.</p>
+              <div className="mb-4 inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
+                <SegBtn active={theme === 'light'} onClick={() => setTheme('light')}>
+                  <Sun className="h-4 w-4" />
+                  Light
+                </SegBtn>
+                <SegBtn active={theme === 'dark'} onClick={() => setTheme('dark')}>
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </SegBtn>
               </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                This PC uses SQLite (local or a shared folder). Self-host talks to Docker Postgres:
-                LAN in the office, an optional tunnel (ngrok or similar) when staff log in from
-                outside. Put those URLs in <span className="font-mono">.env.selfhost</span> — they
-                are not baked into the app. Restart after switching.
+              <div className="mb-5 inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
+                <SegBtn active={!glass} onClick={() => setGlass(false)}>
+                  Standard
+                </SegBtn>
+                <SegBtn active={glass} onClick={() => setGlass(true)}>
+                  Glass
+                </SegBtn>
+              </div>
+              <BoardColorPicker
+                value={boardColor}
+                onChange={handleBoardColor}
+                previewName={user?.full_name}
+              />
+              {boardColorSaving ? <p className="mt-2 text-xs text-ink-40">Saving…</p> : null}
+              {boardColorError ? <p className="mt-2 text-sm text-danger">{boardColorError}</p> : null}
+            </section>
+
+            <section className="jt-card p-5">
+              <p className="jt-eyebrow mb-1">This PC</p>
+              <h2 className="mb-1 text-base font-medium text-ink">Display &amp; updates</h2>
+              <p className="mb-4 text-sm text-ink-55">
+                Compatible graphics is safest on shop laptops. Shop PCs pick up updates from the
+                office folder; home installs use GitHub.
               </p>
-              <div className="inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
-                <button
-                  type="button"
-                  disabled={dataBackendLocked}
-                  onClick={() => handleDataBackend('sqlite')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all disabled:opacity-40 ${
-                    dataBackend === 'sqlite'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Office share
-                </button>
-                <button
-                  type="button"
-                  disabled={dataBackendLocked}
-                  onClick={() => handleDataBackend('selfhost')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all disabled:opacity-40 ${
-                    dataBackend === 'selfhost'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Self-host
-                </button>
+              <div className="mb-4 inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
+                <SegBtn active={graphicsMode === 'soft'} onClick={() => handleGraphicsMode('soft')}>
+                  <Monitor className="h-4 w-4" />
+                  Compatible
+                </SegBtn>
+                <SegBtn active={graphicsMode === 'hard'} onClick={() => handleGraphicsMode('hard')}>
+                  Performance
+                </SegBtn>
               </div>
-              {dataBackendLocked && (
-                <p className="mt-3 text-xs text-ink-40">
-                  Locked by launch flag — start with <span className="font-mono">npm run dev</span> to
-                  change this in Settings.
-                </p>
-              )}
-              {dataBackendNeedsRestart && !dataBackendLocked && (
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-ink-55">Restart required for this change.</p>
-                  <button
-                    type="button"
-                    className="jt-btn-ghost"
-                    onClick={() => window.tracker.relaunchApp()}
-                  >
+              {graphicsNeedsRestart && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-ink-55">Restart to apply graphics.</p>
+                  <button type="button" className="jt-btn-ghost" onClick={() => window.tracker.relaunchApp()}>
                     <RotateCcw className="h-4 w-4" />
                     Restart now
                   </button>
                 </div>
               )}
-            </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleCheckForUpdates}
+                  disabled={checking}
+                  className="jt-btn-ghost disabled:opacity-40"
+                >
+                  <RefreshCw className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+                  {checking ? 'Checking…' : 'Check for updates'}
+                </button>
+                {updateStatus?.type === 'available' && (
+                  <button onClick={handleDownloadUpdate} className="jt-btn-accent">
+                    <Download className="h-4 w-4" />
+                    Download v{updateStatus.version}
+                  </button>
+                )}
+                {updateStatus?.type === 'downloaded' && (
+                  <button onClick={handleInstallUpdate} className="jt-btn-accent">
+                    <RotateCcw className="h-4 w-4" />
+                    Restart &amp; Install
+                  </button>
+                )}
+                <button type="button" className="jt-btn-ghost" onClick={() => setShowWhatsNew(true)}>
+                  <Sparkles className="h-4 w-4" />
+                  What&apos;s New
+                </button>
+              </div>
+              {updateStatus && (
+                <div
+                  className={`mt-3 rounded-xl px-4 py-3 text-sm ${
+                    updateStatus.type === 'uptodate'
+                      ? 'border border-success/20 bg-success/10 text-success'
+                      : updateStatus.type === 'available' || updateStatus.type === 'downloaded'
+                        ? 'border border-brand/20 bg-brand/10 text-brand'
+                        : updateStatus.type === 'error'
+                          ? 'border border-danger/20 bg-danger/10 text-danger'
+                          : 'border border-ink-10 bg-ink-6 text-ink-55'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {updateStatus.type === 'checking' && <RefreshCw className="h-4 w-4 animate-spin" />}
+                    {updateStatus.type === 'downloading' && <Download className="h-4 w-4" />}
+                    <span>{updateStatus.text}</span>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="jt-card p-5">
+              <p className="jt-eyebrow mb-1">Jobs</p>
+              <h2 className="mb-1 text-base font-medium text-ink">Where work is stored</h2>
+              <p className="mb-4 text-sm text-ink-55">
+                Shop server is the usual office choice. Network folder is a shared jobs file.
+                This PC only is for a single computer at home.
+              </p>
+              <div className="mb-4 flex flex-col gap-1 rounded-lg border border-ink-10 bg-surface-soft p-1 sm:inline-flex sm:flex-row">
+                <SegBtn
+                  active={jobsSource === 'shop'}
+                  disabled={dataBackendLocked}
+                  onClick={() => handleJobsSource('shop')}
+                >
+                  <Cloud className="h-4 w-4" />
+                  Shop server
+                </SegBtn>
+                <SegBtn
+                  active={jobsSource === 'folder'}
+                  disabled={dataBackendLocked}
+                  onClick={() => handleJobsSource('folder')}
+                >
+                  <HardDrive className="h-4 w-4" />
+                  Network folder
+                </SegBtn>
+                <SegBtn
+                  active={jobsSource === 'local'}
+                  disabled={dataBackendLocked || saving}
+                  onClick={() => handleJobsSource('local')}
+                >
+                  <Monitor className="h-4 w-4" />
+                  This PC only
+                </SegBtn>
+              </div>
+              {dataBackendLocked && (
+                <p className="mb-3 text-xs text-ink-40">This choice is locked by how Joblio was started.</p>
+              )}
+              {dataBackendNeedsRestart && !dataBackendLocked && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-ink-55">Restart Joblio to finish switching.</p>
+                  <button type="button" className="jt-btn-ghost" onClick={() => window.tracker.relaunchApp()}>
+                    <RotateCcw className="h-4 w-4" />
+                    Restart now
+                  </button>
+                </div>
+              )}
+              {jobsSource !== 'shop' && (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={dbPath}
+                      onChange={(e) => setDbPath(e.target.value)}
+                      placeholder="\\SERVER\SharedFolder\jobs.db"
+                      className="jt-input font-mono text-[13px]"
+                    />
+                    <button onClick={handlePickFolder} className="jt-btn-ghost shrink-0">
+                      <FolderOpen className="h-4 w-4" />
+                      Browse
+                    </button>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSave}
+                      disabled={saving || !dbPath.trim()}
+                      className="jt-btn-accent disabled:opacity-40"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? 'Saving…' : 'Save folder'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
 
             {isAdmin && (
-              <div className="jt-card p-6">
-                <div className="mb-4 flex items-center gap-2">
+              <details className="jt-card p-5">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-ink">
                   <Bot className="h-5 w-5 text-ink-55" />
-                  <h2 className="text-base font-medium text-ink">Joblio AI</h2>
-                </div>
-                <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                  Early feature. Pick a model that runs on this PC (Ollama) or a cloud API
-                  (OpenAI-compatible). The API key stays on this computer. Shop Ollama on a share
-                  file still works until you save a choice here.
+                  <span>
+                    <span className="jt-eyebrow block">Admin</span>
+                    <span className="text-base font-medium">Joblio AI</span>
+                  </span>
+                </summary>
+                <p className="mb-4 mt-3 text-sm text-ink-55">
+                  Optional. Run a model on this PC, or a cloud API. The key stays on this computer.
                 </p>
                 {aiSource === 'share-file' && aiProvider === 'ollama' && (
                   <p className="mb-3 text-xs text-ink-40">
-                    Using the office <span className="font-mono">joblio-ollama.json</span> file until
-                    you save settings on this PC.
+                    Using the office share file until you save a choice here.
                   </p>
                 )}
                 <div className="mb-4 inline-flex flex-wrap rounded-lg border border-ink-10 bg-surface-soft p-1">
@@ -439,274 +625,11 @@ export default function Settings() {
                   <Save className="h-4 w-4" />
                   {aiSaving ? 'Saving…' : 'Save AI settings'}
                 </button>
-              </div>
+              </details>
             )}
 
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <HardDrive className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Database Location</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                {dataBackend === 'selfhost'
-                  ? 'Not used in Self-host mode — data comes from Docker Postgres.'
-                  : 'This PC only, or a shared folder so every shop computer uses the same jobs.db.'}
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={dbPath}
-                  onChange={(e) => setDbPath(e.target.value)}
-                  placeholder="\\SERVER\SharedFolder\jobs.db"
-                  disabled={dataBackend === 'selfhost'}
-                  className="jt-input font-mono text-[13px] disabled:opacity-50"
-                />
-                <button
-                  onClick={handlePickFolder}
-                  disabled={dataBackend === 'selfhost'}
-                  className="jt-btn-ghost shrink-0 disabled:opacity-40"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  Browse
-                </button>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleUseThisPc}
-                  disabled={dataBackend === 'selfhost' || saving}
-                  className="jt-btn-ghost disabled:opacity-40"
-                >
-                  <Monitor className="h-4 w-4" />
-                  Use this PC only
-                </button>
-              </div>
-              <p className="mt-2 text-xs text-ink-40">
-                The database file will be created here if it doesn&apos;t exist.
-              </p>
-            </div>
+            <FeedbackPanel />
 
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Monitor className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Display (laptops &amp; desktops)</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                Compatible mode is the default — stable on shop laptops without a strong graphics
-                card. Use Performance only on desktops that feel sluggish.
-              </p>
-              <div className="inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
-                <button
-                  type="button"
-                  onClick={() => handleGraphicsMode('soft')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    graphicsMode === 'soft'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Compatible
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleGraphicsMode('hard')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    graphicsMode === 'hard'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Performance
-                </button>
-              </div>
-              {graphicsNeedsRestart && (
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-ink-55">Restart required for this change.</p>
-                  <button
-                    type="button"
-                    className="jt-btn-ghost"
-                    onClick={() => window.tracker.relaunchApp()}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Restart now
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Palette className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Appearance</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                Choose light or dark mode. Your preference is saved on this PC.
-              </p>
-              <div className="inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
-                <button
-                  type="button"
-                  onClick={() => setTheme('light')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    theme === 'light'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  <Sun className="h-4 w-4" />
-                  Light
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('dark')}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-card text-ink shadow-ring'
-                      : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  <Moon className="h-4 w-4" />
-                  Dark
-                </button>
-              </div>
-              <p className="mb-3 mt-6 text-sm leading-relaxed text-ink-55">
-                Glass adds a warm colour wash and light edges on cards. No extra GPU blur, so shop
-                laptops stay snappy. Standard is the usual look. This PC remembers your choice.
-              </p>
-              <div className="inline-flex rounded-lg border border-ink-10 bg-surface-soft p-1">
-                <button
-                  type="button"
-                  onClick={() => setGlass(false)}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    !glass ? 'bg-card text-ink shadow-ring' : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Standard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGlass(true)}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    glass ? 'bg-card text-ink shadow-ring' : 'text-ink-55 hover:text-ink'
-                  }`}
-                >
-                  Glass
-                </button>
-              </div>
-            </div>
-
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Palette className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Your board colour</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                This colour wraps your name on job cards so assigned work is easier to spot.
-              </p>
-              <BoardColorPicker
-                value={boardColor}
-                onChange={handleBoardColor}
-                previewName={user?.full_name}
-              />
-              {boardColorSaving ? (
-                <p className="mt-2 text-xs text-ink-40">Saving…</p>
-              ) : null}
-              {boardColorError ? (
-                <p className="mt-2 text-sm text-danger">{boardColorError}</p>
-              ) : null}
-            </div>
-
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">What&apos;s New</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                See what changed in the latest update — useful as a checklist when testing.
-              </p>
-              <button type="button" className="jt-btn-ghost" onClick={() => setShowWhatsNew(true)}>
-                <Sparkles className="h-4 w-4" />
-                View changelog
-              </button>
-            </div>
-
-            <div className="jt-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Download className="h-5 w-5 text-ink-55" />
-                <h2 className="text-base font-medium text-ink">Updates</h2>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-ink-55">
-                Check for new versions of the application. Updates are downloaded from the
-                network share.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={handleCheckForUpdates}
-                  disabled={checking}
-                  className="jt-btn-ghost disabled:opacity-40"
-                >
-                  <RefreshCw className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
-                  {checking ? 'Checking…' : 'Check for Updates'}
-                </button>
-
-                {updateStatus?.type === 'available' && (
-                  <button onClick={handleDownloadUpdate} className="jt-btn-accent">
-                    <Download className="h-4 w-4" />
-                    Download v{updateStatus.version}
-                  </button>
-                )}
-
-                {updateStatus?.type === 'downloaded' && (
-                  <button onClick={handleInstallUpdate} className="jt-btn-accent">
-                    <RotateCcw className="h-4 w-4" />
-                    Restart &amp; Install
-                  </button>
-                )}
-              </div>
-
-              {updateStatus && (
-                <div
-                  className={`mt-3 rounded-xl px-4 py-3 text-sm ${
-                    updateStatus.type === 'uptodate'
-                      ? 'border border-success/20 bg-success/10 text-success'
-                      : updateStatus.type === 'available' || updateStatus.type === 'downloaded'
-                        ? 'border border-brand/20 bg-brand/10 text-brand'
-                        : updateStatus.type === 'error'
-                          ? 'border border-danger/20 bg-danger/10 text-danger'
-                          : 'border border-ink-10 bg-ink-6 text-ink-55'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {updateStatus.type === 'checking' && <RefreshCw className="h-4 w-4 animate-spin" />}
-                    {updateStatus.type === 'downloading' && <Download className="h-4 w-4" />}
-                    <span>{updateStatus.text}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {message && (
-              <div
-                className={`rounded-xl px-4 py-3 text-sm ${
-                  message.type === 'success'
-                    ? 'border border-success/20 bg-success/10 text-success'
-                    : 'border border-danger/20 bg-danger/10 text-danger'
-                }`}
-              >
-                {message.text}
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                onClick={handleSave}
-                disabled={saving || dataBackend === 'selfhost' || !dbPath.trim()}
-                className="jt-btn-accent disabled:opacity-40"
-              >
-                <Save className="h-4 w-4" />
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            </div>
           </div>
         )}
       </div>

@@ -10,7 +10,7 @@ function filePath(): string {
   return path.join(app.getPath('userData'), FILE);
 }
 
-function officeShareLooksLikeSelfHost(): boolean {
+function officeShareHasApiKey(): boolean {
   try {
     for (const root of reachableOfficeShareRoots()) {
       if (officePathExists(path.join(root, 'joblio-api-key.txt'))) return true;
@@ -31,8 +31,10 @@ export function getStoredDataBackend(): DataBackend {
     // first run — no file yet
   }
   // Shop PC that can see the share key → Docker. Home / public → SQLite.
-  return officeShareLooksLikeSelfHost() ? 'selfhost' : 'sqlite';
+  return officeShareHasApiKey() ? 'selfhost' : 'sqlite';
 }
+
+export { officeShareHasApiKey };
 
 export function setStoredDataBackend(backend: DataBackend): void {
   const dir = app.getPath('userData');

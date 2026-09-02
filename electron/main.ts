@@ -11,7 +11,10 @@ import {
   applyGraphicsModeBeforeReady,
   forceSoftGraphicsAfterCrash,
 } from './utils/graphicsMode.js';
-import { titleBarOverlayOptions } from './utils/windowChrome.js';
+import { titleBarOverlayOptions, windowBackgroundForTheme } from './utils/windowChrome.js';
+import { applyAppIdentity } from './utils/joblioNotify.js';
+
+applyAppIdentity();
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -45,15 +48,23 @@ function showLoadFailurePage(win: BrowserWindow, detail: string): void {
   );
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Joblio</title>
 <style>
-  body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:#f1f5f9;color:#26251e;
+  :root{color-scheme:light dark}
+  body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:#f2f1ed;color:#26251e;
     display:flex;align-items:center;justify-content:center;height:100vh;padding:24px;box-sizing:border-box}
   .card{max-width:440px;background:#fff;border-radius:16px;padding:28px;
     box-shadow:0 14px 40px rgba(0,0,0,.12)}
   h1{font-size:18px;margin:0 0 8px} p{font-size:14px;color:#6b6560;line-height:1.45;margin:0 0 12px}
   code{display:block;font-size:11px;background:#f4f3ef;padding:10px;border-radius:8px;
     white-space:pre-wrap;word-break:break-word;margin:0 0 16px}
-  button{width:100%;border:0;border-radius:10px;padding:10px 14px;background:#26251e;color:#fff;
+  button{width:100%;border:0;border-radius:10px;padding:10px 14px;background:#26251e;color:#f2f1ed;
     font-size:14px;font-weight:600;cursor:pointer}
+  @media (prefers-color-scheme:dark){
+    body{background:#1c1b18;color:#ebe9e2}
+    .card{background:#2a2924;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    p{color:#a8a49c}
+    code{background:#23221e;color:#ebe9e2}
+    button{background:#ebe9e2;color:#1c1b18}
+  }
 </style></head><body><div class="card">
   <h1>Joblio could not open on this PC</h1>
   <p>Reinstall from <b>\\\\server\\Gary\\Job Tracker\\updates</b>.
@@ -72,7 +83,7 @@ function createWindow(): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     title: 'Joblio',
-    backgroundColor: '#f2f1ed',
+    backgroundColor: windowBackgroundForTheme('light'),
     show: true,
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
@@ -178,6 +189,13 @@ function createWindow(): BrowserWindow {
 
 async function bootstrap(): Promise<void> {
   const { isSelfHostMode, assertSelfHostTestOnly } = await import('./db/backendMode.js');
+  const { rescueEmptyOfficeSqlite } = await import('./utils/officeDbRescue.js');
+  try {
+    const rescued = await rescueEmptyOfficeSqlite();
+    if (rescued) startupLog('[db] empty office sqlite — switched to shop server');
+  } catch (err: any) {
+    startupLog(`[db] office sqlite rescue skipped: ${err?.message || err}`);
+  }
   assertSelfHostTestOnly();
 
   startupLog(

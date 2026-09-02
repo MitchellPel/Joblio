@@ -1,6 +1,6 @@
 {
   "name": "signage-job-tracker",
-  "version": "0.4.26",
+  "version": "0.4.27",
   "private": true,
   "license": "GPL-3.0-or-later",
   "description": "Windows desktop job tracker for sign shops. Electron + React. One PC, no server.",
@@ -42,6 +42,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "shortcutName": "Joblio",
+      "uninstallDisplayName": "Joblio",
       "differentialPackage": true
     },
     "publish": {

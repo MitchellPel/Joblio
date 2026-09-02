@@ -1,4 +1,4 @@
-import { Notification } from 'electron';
+import { showJoblioNotification } from '../utils/joblioNotify';
 import { getActiveUserIds } from './authService';
 import { scheduleSave } from '../db/connection';
 import { isSelfHostMode } from '../db/backendMode';
@@ -40,10 +40,11 @@ function isInAlertWindow(now: Date): boolean {
 }
 
 function showNativeNotification(title: string, body: string): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({ title, body, silent: false });
-  n.on('click', () => raiseAlertWindow());
-  n.show();
+  showJoblioNotification({
+    title,
+    body,
+    onClick: () => raiseAlertWindow(),
+  });
 }
 
 async function processAlertsForUser(
@@ -77,7 +78,7 @@ async function processAlertsForUser(
     sent++;
     const message = alertMessage(alertType as RiggingAlertType, install);
 
-    showNativeNotification('Joblio — Rigging Schedule', message);
+    showNativeNotification('Rigging schedule', message);
     emitRiggingAlert({
       alert_type: alertType,
       message,

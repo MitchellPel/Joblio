@@ -81,7 +81,7 @@ export default function UpdateNotification() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={handleDownload}
-                    className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-ink-90"
+                    className="jt-btn-accent !px-3 !py-1.5 text-xs"
                   >
                     Download
                   </button>
@@ -127,7 +127,7 @@ export default function UpdateNotification() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={handleInstall}
-                    className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-ink-90"
+                    className="jt-btn-accent !px-3 !py-1.5 text-xs"
                   >
                     Restart now
                   </button>

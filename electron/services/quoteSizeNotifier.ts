@@ -1,4 +1,5 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow } from 'electron';
+import { showJoblioNotification } from '../utils/joblioNotify';
 import { getActiveUserIds } from './authService';
 import { isSelfHostMode } from '../db/backendMode';
 import {
@@ -43,10 +44,11 @@ function openQuoteSize(id: number): void {
 }
 
 function showToast(title: string, body: string, quoteSizeId: number): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({ title, body, silent: false });
-  n.on('click', () => openQuoteSize(quoteSizeId));
-  n.show();
+  showJoblioNotification({
+    title,
+    body,
+    onClick: () => openQuoteSize(quoteSizeId),
+  });
 }
 
 export function notifyNewQuoteSize(row: QuoteSizeRow): void {
@@ -54,7 +56,7 @@ export function notifyNewQuoteSize(row: QuoteSizeRow): void {
   for (const userId of getActiveUserIds()) {
     notifiedRequestKeys.add(`${userId}:${row.id}`);
   }
-  showToast('Joblio — Cut / Print List', row.job_name, row.id);
+  showToast('Cut / Print List', row.job_name, row.id);
 }
 
 export function notifyQuoteSizesChanged(): void {
@@ -67,7 +69,7 @@ export function notifyQuoteSizeDone(row: QuoteSizeRow, actorUserId: number): voi
   notifiedDoneKeys.add(`${row.created_by}:${row.id}`);
   if (actorUserId === row.created_by) return;
   if (!getActiveUserIds().includes(row.created_by)) return;
-  showToast('Joblio — Cut / Print List', `${row.job_name} is marked done`, row.id);
+  showToast('Cut / Print List', `${row.job_name} is marked done`, row.id);
 }
 
 export function notifyQuoteSizeMentions(mentions: QuoteSizeMentionRow[]): void {
@@ -77,7 +79,7 @@ export function notifyQuoteSizeMentions(mentions: QuoteSizeMentionRow[]): void {
   for (const m of mentions) {
     if (notifiedMentionIds.has(m.id)) continue;
     notifiedMentionIds.add(m.id);
-    showToast(`Joblio — @mention · ${m.job_name}`, `${m.author_name}: ${m.note_body.slice(0, 120)}`, m.quote_size_id);
+    showToast(`@mention · ${m.job_name}`, `${m.author_name}: ${m.note_body.slice(0, 120)}`, m.quote_size_id);
   }
 }
 
@@ -143,26 +145,26 @@ export async function checkQuoteSizesAsync(): Promise<void> {
 
     if (toToast.length > 3) {
       showToast(
-        'Joblio — Cut / Print List',
+        'Cut / Print List',
         `${toToast.length} new cut / print requests.`,
         toToast[0].id
       );
     } else {
       for (const row of toToast) {
-        showToast('Joblio — Cut / Print List', row.job_name, row.id);
+        showToast('Cut / Print List', row.job_name, row.id);
       }
     }
 
     if (mentionToasts.length > 3) {
       showToast(
-        'Joblio — Mentions',
+        'Mentions',
         `${mentionToasts.length} new @mentions on Cut / Print List.`,
         mentionToasts[0].quote_size_id
       );
     } else {
       for (const m of mentionToasts) {
         showToast(
-          `Joblio — @mention · ${m.job_name}`,
+          `@mention · ${m.job_name}`,
           `${m.author_name}: ${m.note_body.slice(0, 120)}`,
           m.quote_size_id
         );
@@ -171,13 +173,13 @@ export async function checkQuoteSizesAsync(): Promise<void> {
 
     if (doneToasts.length > 3) {
       showToast(
-        'Joblio — Cut / Print List',
+        'Cut / Print List',
         `${doneToasts.length} of your requests are marked done.`,
         doneToasts[0].id
       );
     } else {
       for (const row of doneToasts) {
-        showToast('Joblio — Cut / Print List', `${row.job_name} is marked done`, row.id);
+        showToast('Cut / Print List', `${row.job_name} is marked done`, row.id);
       }
     }
   } catch {

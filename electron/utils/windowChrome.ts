@@ -4,6 +4,10 @@ export const TITLEBAR_OVERLAY_HEIGHT = 36;
 
 export type TitleBarTheme = 'light' | 'dark';
 
+export function windowBackgroundForTheme(theme: TitleBarTheme): string {
+  return theme === 'dark' ? '#1c1b18' : '#f2f1ed';
+}
+
 export function titleBarOverlayOptions(theme: TitleBarTheme, glass: boolean) {
   if (theme === 'dark') {
     return {

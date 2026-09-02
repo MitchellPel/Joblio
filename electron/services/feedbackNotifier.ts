@@ -1,4 +1,5 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow } from 'electron';
+import { showJoblioNotification } from '../utils/joblioNotify';
 import { getActiveUserIds } from './authService';
 import { isSelfHostMode } from '../db/backendMode';
 import { findUserById } from '../repositories/usersRepo';
@@ -50,17 +51,14 @@ function kindLabel(kind: FeedbackRow['kind']): string {
 }
 
 function showToast(item: FeedbackRow): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title: `Joblio — ${kindLabel(item.kind)}`,
+  showJoblioNotification({
+    title: kindLabel(item.kind),
     body: `${item.created_name || 'Staff'}: ${preview(item.body)}`,
-    silent: false,
+    onClick: () => {
+      const win = focusMainWindow();
+      if (win) win.webContents.send('feedback:open', { id: item.id });
+    },
   });
-  n.on('click', () => {
-    const win = focusMainWindow();
-    if (win) win.webContents.send('feedback:open', { id: item.id });
-  });
-  n.show();
 }
 
 export function notifyNewFeedback(item: FeedbackRow): void {
@@ -118,18 +116,14 @@ export async function checkFeedbackAsync(): Promise<void> {
 
     if (toToast.length === 0) return;
     if (toToast.length > 3) {
-      if (Notification.isSupported()) {
-        const n = new Notification({
-          title: 'Joblio — Bugs & changes',
-          body: `${toToast.length} new reports. Open Settings to review.`,
-          silent: false,
-        });
-        n.on('click', () => {
+      showJoblioNotification({
+        title: 'Bugs & changes',
+        body: `${toToast.length} new reports. Open Settings to review.`,
+        onClick: () => {
           const win = focusMainWindow();
           if (win) win.webContents.send('feedback:open', { id: toToast[0].id });
-        });
-        n.show();
-      }
+        },
+      });
     } else {
       for (const item of toToast) showToast(item);
     }

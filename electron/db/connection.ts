@@ -135,22 +135,51 @@ function yieldMain(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
+async function ensureSqlJs(): Promise<NonNullable<typeof SQL>> {
+  if (SQL) return SQL;
+  const devPath = path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+  const wasmPath = fs.existsSync(devPath)
+    ? devPath
+    : path.join(__dirname, 'sql-wasm.wasm');
+  SQL = await initSqlJs({
+    locateFile: (file: string) => {
+      const dir = path.dirname(wasmPath);
+      return path.join(dir, file);
+    },
+  });
+  return SQL;
+}
+
+/** Read-only job count. Does not create or migrate the file. */
+export async function peekSqliteJobCount(dbPath: string): Promise<number | null> {
+  if (!fs.existsSync(dbPath)) return 0;
+  try {
+    const engine = await ensureSqlJs();
+    const buffer = await fs.promises.readFile(dbPath);
+    const peek = new engine.Database(buffer);
+    try {
+      const stmt = peek.prepare(
+        `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='jobs'`
+      );
+      const hasTable = stmt.step() ? Number(stmt.getAsObject().n || 0) > 0 : false;
+      stmt.free();
+      if (!hasTable) return 0;
+      const count = peek.prepare(`SELECT COUNT(*) AS n FROM jobs WHERE archived_at IS NULL`);
+      const n = count.step() ? Number(count.getAsObject().n || 0) : 0;
+      count.free();
+      return n;
+    } finally {
+      peek.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
 export async function initDatabaseAsync(customPath?: string): Promise<SqlJsDatabase> {
   if (db) return db;
 
-  if (!SQL) {
-    const devPath = path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
-    const wasmPath = fs.existsSync(devPath)
-      ? devPath
-      : path.join(__dirname, 'sql-wasm.wasm');
-
-    SQL = await initSqlJs({
-      locateFile: (file: string) => {
-        const dir = path.dirname(wasmPath);
-        return path.join(dir, file);
-      },
-    });
-  }
+  const engine = await ensureSqlJs();
 
   const dbPath = customPath || getSettingsPath();
   if (!dbPath) {
@@ -171,7 +200,7 @@ export async function initDatabaseAsync(customPath?: string): Promise<SqlJsDatab
       await yieldMain();
     }
 
-    db = buffer ? new SQL.Database(buffer) : new SQL.Database();
+    db = buffer ? new engine.Database(buffer) : new engine.Database();
     db.run('PRAGMA foreign_keys = ON');
 
     const migrated = migrate(db);

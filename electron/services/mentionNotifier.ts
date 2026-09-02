@@ -1,4 +1,5 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow } from 'electron';
+import { showJoblioNotification } from '../utils/joblioNotify';
 import { getActiveUserIds } from './authService';
 import { listUnseenMentions, type MentionRow } from '../repositories/mentionsRepo';
 import { listUnseenMentionsCloud } from '../selfhost/mentionsCloud';
@@ -37,30 +38,24 @@ function notePreview(body: string, max = 90): string {
 }
 
 function showMentionNotification(mention: MentionRow): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title: `${mention.author_name || 'A teammate'} mentioned you — Job ${mention.job_no}`,
-    body: notePreview(mention.note_body),
-    silent: false,
+  showJoblioNotification({
+    title: `${mention.author_name || 'A teammate'} mentioned you`,
+    body: `Job ${mention.job_no} — ${notePreview(mention.note_body)}`,
+    onClick: () => {
+      const win = focusMainWindow();
+      if (win) win.webContents.send('mentions:open', { job_id: mention.job_id });
+    },
   });
-  n.on('click', () => {
-    const win = focusMainWindow();
-    if (win) win.webContents.send('mentions:open', { job_id: mention.job_id });
-  });
-  n.show();
 }
 
 function showSummaryNotification(count: number): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title: 'Joblio — Mentions',
-    body: `You have ${count} unread mentions. Click the bell in Joblio to see them.`,
-    silent: false,
+  showJoblioNotification({
+    title: 'Unread mentions',
+    body: `You have ${count} unread mentions. Open the bell in Joblio to see them.`,
+    onClick: () => {
+      focusMainWindow();
+    },
   });
-  n.on('click', () => {
-    focusMainWindow();
-  });
-  n.show();
 }
 
 function notifyFresh(fresh: MentionRow[]): void {

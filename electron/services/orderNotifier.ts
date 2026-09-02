@@ -1,4 +1,5 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow } from 'electron';
+import { showJoblioNotification } from '../utils/joblioNotify';
 import { getActiveUserIds } from './authService';
 import { isSelfHostMode } from '../db/backendMode';
 import {
@@ -38,17 +39,14 @@ function orderLabel(order: OrderRow): string {
 }
 
 function showOrderToast(order: OrderRow): void {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title: 'Joblio — New order',
+  showJoblioNotification({
+    title: 'New order',
     body: orderLabel(order),
-    silent: false,
+    onClick: () => {
+      const win = focusMainWindow();
+      if (win) win.webContents.send('orders:open', { order_id: order.id });
+    },
   });
-  n.on('click', () => {
-    const win = focusMainWindow();
-    if (win) win.webContents.send('orders:open', { order_id: order.id });
-  });
-  n.show();
 }
 
 /** Broadcast a new order to every open Joblio window on THIS machine + Windows toast. */
@@ -109,18 +107,14 @@ export async function checkOrdersAsync(): Promise<void> {
 
     if (toToast.length === 0) return;
     if (toToast.length > 3) {
-      if (Notification.isSupported()) {
-        const n = new Notification({
-          title: 'Joblio — Orders',
-          body: `${toToast.length} new orders. Open Orders in Joblio to review.`,
-          silent: false,
-        });
-        n.on('click', () => {
+      showJoblioNotification({
+        title: 'New orders',
+        body: `${toToast.length} new orders. Open Orders in Joblio to review.`,
+        onClick: () => {
           const win = focusMainWindow();
           if (win) win.webContents.send('orders:open', { order_id: toToast[0].id });
-        });
-        n.show();
-      }
+        },
+      });
     } else {
       for (const order of toToast) showOrderToast(order);
     }
